@@ -3,24 +3,27 @@
 > The general plan for this project. Keep it current; detail lives in the
 > sprint records.
 
-## Now
+## Done
 
 - **001 — scoring core + model bake-off.** `score(prompt, choices)` over
-  llama-cpp-python (multi-token choices, thinking off), a labelled eval set
-  of ~150 homelab-shaped items, and a bake-off of Qwen3-4B Q8_0 / 8B Q6_K /
-  8B Q8_0 / 14B Q4_K_M on kubs0 alongside the klams embedders: peak VRAM,
-  latency, accuracy, calibration. Ends in a decision doc naming the default.
+  llama-cpp-python, a 154-item eval set, and a four-model bake-off on kubs0.
+  Default model: **Qwen3-14B Q4_K_M** (11.6 GiB peak beside TEI); fallback
+  8B Q6_K. Raw probabilities are overconfident (T≈10). See
+  `sprints/001-scoring-core-and-bake-off.md`.
 
 ## Next
 
+- **Calibration.** Per-task temperature scaling fitted on the eval set —
+  001 measured a single T recovering ~⅓ of the Brier score.
 - **002 — service.** HTTP API (prompt + choices → probabilities) as a
   systemd user service on kubs0, tailnet-served; model kept resident.
-- Batching / KV-prefix reuse so N choices share one prompt evaluation.
+- Batch a call's choices into one eval (as parallel sequences) — 001
+  already reuses the prompt's KV across choices, one eval per choice.
 
 ## Later / Ideas
 
 - First consumers: korg WI → project routing, kmon finding severity,
   mail/notification triage.
-- Calibration step (temperature scaling per task) if raw probabilities are
-  off.
+- Richer routing input (WI content, fuller project contracts, few-shot) —
+  title-only routing measured 47% at best in 001.
 - MCP surface so agents can call it directly.

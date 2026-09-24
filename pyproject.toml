@@ -6,7 +6,10 @@ authors = [
     { name = "Ken Hiatt", email = "ken.hiatt@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "llama-cpp-python>=0.3.35",
+    "numpy>=2.5.3",
+]
 
 [build-system]
 requires = ["uv_build>=0.10.9,<0.11.0"]
@@ -18,3 +21,9 @@ dev = [
     "ruff>=0.16.8",
     "ty>=0.0.84",
 ]
+
+[tool.pytest.ini_options]
+# GPU/weights tests are opt-in: `just check` must stay fast and model-free.
+# Run them with `just test-gpu` (needs KODDS_MODEL pointing at a GGUF).
+markers = ["gpu: needs a CUDA GPU and downloaded weights (KODDS_MODEL)"]
+addopts = "-m 'not gpu'"
