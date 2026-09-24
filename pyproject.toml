@@ -1,0 +1,20 @@
+[project]
+name = "kodds"
+version = "0.1.0"
+description = "Local LLM classifier: prompt + choices -> per-choice probabilities from next-token logits"
+authors = [
+    { name = "Ken Hiatt", email = "ken.hiatt@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+    "ty>=0.0.84",
+]
