@@ -1,0 +1,478 @@
+<meta charset="utf-8">
+<title>kodds Model Bake-off</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  --ground: #f3f4f6;
+  --panel: #ffffff;
+  --ink: #14171c;
+  --ink-2: #4f5663;
+  --ink-3: #7a8190;
+  --rule: #dfe2e7;
+  --grid: #eceef1;
+  --pick: #2a78d6;
+  --pick-soft: #dbe8f8;
+  --other: #a6acb7;
+  --tei: #d4c7ae;
+  --free: #eceef1;
+  --gap: #e34948;
+  --good: #1a8a5a;
+  --token: #eef1f5;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #111317;
+    --panel: #1a1d22;
+    --ink: #f1f2f4;
+    --ink-2: #b8bdc7;
+    --ink-3: #8a909c;
+    --rule: #2c3038;
+    --grid: #252930;
+    --pick: #3987e5;
+    --pick-soft: #1c2d44;
+    --other: #5e6573;
+    --tei: #7a6d56;
+    --free: #252930;
+    --gap: #e66767;
+    --good: #3cb683;
+    --token: #242830;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #111317;
+  --panel: #1a1d22;
+  --ink: #f1f2f4;
+  --ink-2: #b8bdc7;
+  --ink-3: #8a909c;
+  --rule: #2c3038;
+  --grid: #252930;
+  --pick: #3987e5;
+  --pick-soft: #1c2d44;
+  --other: #5e6573;
+  --tei: #7a6d56;
+  --free: #252930;
+  --gap: #e66767;
+  --good: #3cb683;
+  --token: #242830;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font: 15px/1.55 var(--body);
+  padding-inline: 16px;
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 1060px; margin-inline: auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.005em; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; max-width: 66ch; }
+.eyebrow {
+  font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3);
+}
+.lede { color: var(--ink-2); font-size: 16.5px; }
+code, .mono { font-family: var(--mono); font-size: 0.92em; }
+.num { font-variant-numeric: tabular-nums; }
+
+header { display: grid; gap: 14px; padding-bottom: 8px; }
+.verdict {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  border: 1px solid var(--rule); background: var(--panel); border-radius: 6px;
+}
+.verdict > div { padding: 14px 18px; display: grid; gap: 4px; border-right: 1px solid var(--rule); }
+.verdict > div:last-child { border-right: 0; }
+.verdict .k { font: 500 11.5px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.verdict .v { font: 600 26px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.verdict .s { font-size: 13px; color: var(--ink-2); }
+.verdict .model .v { color: var(--pick); font-size: 22px; }
+
+section { display: grid; gap: 14px; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; display: grid; gap: 14px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.note { font-size: 13.5px; color: var(--ink-2); }
+.note strong { color: var(--ink); font-weight: 600; }
+
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 320px; }
+svg text { font-family: var(--body); fill: var(--ink-2); font-size: 12px; }
+svg .lab { fill: var(--ink); font-weight: 500; }
+svg .val { font-family: var(--mono); font-size: 11.5px; fill: var(--ink-2); }
+svg .axis { font-family: var(--mono); font-size: 11px; fill: var(--ink-3); }
+svg .hit { fill: transparent; cursor: default; }
+svg .hit:focus { outline: none; }
+svg .hit:focus-visible { stroke: var(--ink); stroke-width: 1.5; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sw.dot { border-radius: 50%; }
+
+/* token strip */
+.tokens { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tok {
+  font: 500 14px/1 var(--mono); padding: 7px 9px; border-radius: 4px;
+  background: var(--token); border: 1px solid var(--rule); color: var(--ink);
+}
+.tok.eot { background: var(--pick-soft); border-color: var(--pick); color: var(--ink); }
+.tok.ctx { color: var(--ink-3); }
+.plus { font: 500 14px/1 var(--mono); color: var(--ink-3); }
+.eq { display: grid; gap: 10px; }
+.odds { display: grid; gap: 6px; }
+.odds-row { display: grid; grid-template-columns: 7.5em 5.5em 1fr 3.5em; gap: 10px; align-items: center; font-size: 13.5px; }
+.odds-row .bar { height: 10px; background: var(--grid); border-radius: 2px; overflow: hidden; }
+.odds-row .bar i { display: block; height: 100%; background: var(--other); border-radius: 0 4px 4px 0; }
+.odds-row.is-label .bar i { background: var(--pick); }
+.odds-row .mono { color: var(--ink-2); }
+
+.decision { border-left: 3px solid var(--pick); padding: 4px 0 4px 18px; display: grid; gap: 10px; }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; max-width: 70ch; }
+
+details { border-top: 1px solid var(--rule); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+summary:focus-visible { outline: 2px solid var(--pick); outline-offset: 3px; }
+.tablewrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; font-size: 13px; min-width: 640px; width: 100%; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { font: 500 11.5px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+tr.pick td:first-child { color: var(--pick); font-weight: 600; }
+
+#tip {
+  position: fixed; pointer-events: none; z-index: 10; max-width: 260px;
+  background: var(--ink); color: var(--ground); font-size: 12.5px; line-height: 1.4;
+  padding: 8px 10px; border-radius: 4px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+}
+footer { color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hit { transition: fill 120ms; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">kodds · sprint 001 · kubs0 · 2026-09-24</div>
+    <h1>Which Qwen3 reads the odds best, beside klams on a 16 GB card</h1>
+    <p class="lede">kodds turns a local model's next-token log-probabilities into a probability for each answer choice. Four quantised Qwen3 builds ran the same 154 labelled homelab questions on kubs0's RTX 4080 SUPER, with klams' two embedding servers left running throughout.</p>
+    <div class="verdict">
+      <div class="model"><span class="k">Default model</span><span class="v">Qwen3-14B Q4_K_M</span><span class="s">fallback: 8B Q6_K</span></div>
+      <div><span class="k">Accuracy</span><span class="v num">74.7%</span><span class="s">115 of 154 right</span></div>
+      <div><span class="k">Peak VRAM, whole GPU</span><span class="v num">11.6 GiB</span><span class="s">~4.4 GiB left of 16</span></div>
+      <div><span class="k">Per call, p50</span><span class="v num">95 ms</span><span class="s">p95 263 ms</span></div>
+      <div><span class="k">Brier (lower wins)</span><span class="v num">0.488</span><span class="s">0.399 with one temperature</span></div>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="eyebrow">How a choice is scored</div>
+    <h2>Every token of the answer counts, and so does stopping</h2>
+    <div class="two">
+      <div class="eq">
+        <p class="note">A choice's score is the <strong>sum of the log-probs of all its tokens</strong>, then the end-of-turn token. Reading only the first token can't work here: five of the eight project names start with the bare token <code>k</code>.</p>
+        <div class="tokens" aria-label="Tokenisation of k-homelab">
+          <span class="tok ctx">…&lt;/think&gt;\n\n</span><span class="plus">→</span>
+          <span class="tok">k</span><span class="tok">-h</span><span class="tok">om</span><span class="tok">el</span><span class="tok">ab</span><span class="tok eot">&lt;|im_end|&gt;</span>
+        </div>
+        <p class="note">log P(<code>k-homelab</code>) = log p(k) + log p(-h | k) + … + log p(<span class="mono">&lt;|im_end|&gt;</span> | …ab). The end-of-turn token makes the score mean “the answer is <em>exactly</em> this”. Without it, <code>Mars</code> would always beat <code>Mars bar</code>, because every continuation of “Mars” counts toward it.</p>
+      </div>
+      <div class="eq">
+        <p class="note"><strong>Then normalise across the choices.</strong> A real routing item from the 4B diagnostic, labelled <code>kpidash</code>. Raw summed log-probs on the left, probabilities after log-sum-exp on the right:</p>
+        <div class="odds" id="odds"></div>
+        <p class="note">The model chose kmon, narrowly and wrongly. The raw numbers near 0 mean the model put almost all of its mass on those two names; this isn't a scoring artefact.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Fit</div>
+    <h2>All four fit beside klams, with room to spare</h2>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw" style="background:var(--tei)"></i>klams TEI embedders (2.8 GiB, untouched every run)</span>
+      <span><i class="sw" style="background:var(--pick)"></i>kodds model, default</span>
+      <span><i class="sw" style="background:var(--other)"></i>kodds model, other</span>
+      <span><i class="sw" style="background:var(--free);border:1px solid var(--rule)"></i>free</span>
+    </div>
+    <div class="chart" id="vram" role="img" aria-label="Stacked bars of peak GPU memory per model: TEI 2.8 GiB plus model; 4B 7.5 GiB total, 8B Q6_K 9.3, 8B Q8_0 11.1, 14B Q4_K_M 11.6, of 16 GiB."></div>
+    <p class="note">Peak memory for the whole GPU, sampled from <code>nvidia-smi</code> every 250 ms while the model loaded and ran all 154 items (<code>n_ctx</code> 1024, all layers offloaded). Loading took 0.8–1.3 s for every model. Nothing needed kai's 5090.</p>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Accuracy by task</div>
+    <h2>Size beats bits, and routing is hard for everyone</h2>
+    <div class="chart" id="acc" role="img" aria-label="Accuracy per task per model. Route: 4B 28%, 8B Q6 42%, 8B Q8 42%, 14B 47%. Severity: 71, 80, 80, 91. Triage: 78, 87, 89, 98."></div>
+    <p class="note"><strong>8B Q8_0 buys nothing over Q6_K</strong> for 1.7 GiB more, while 14B at 4-bit wins every task. Severity (kmon's ok / attention / problem call) and email triage are usable already. Routing a work item from its title and eight one-line project descriptions tops out at 47% (chance is 12.5%, the dashed line), and the misses are confident.</p>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <div class="eyebrow">Calibration</div>
+      <h2>Every model is sure; none is that right</h2>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw dot" style="background:var(--ink)"></i>accuracy</span>
+        <span><i class="sw dot" style="background:var(--gap)"></i>mean confidence in its pick</span>
+      </div>
+      <div class="chart" id="conf" role="img" aria-label="Accuracy vs mean confidence: 4B 55% vs 96%; 8B Q6 66 vs 96; 8B Q8 67 vs 97; 14B 75 vs 98."></div>
+      <p class="note">The red gap is overconfidence: 24–41 points for every model. The raw probabilities rank the choices well, but you can't set a threshold on them yet.</p>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Is it fixable?</div>
+      <h2>One temperature recovers a fifth to a third of the Brier score</h2>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw dot" style="background:var(--other)"></i>raw</span>
+        <span><i class="sw dot" style="background:var(--good)"></i>softmax(log-prob / T), T fitted on the other half</span>
+      </div>
+      <div class="chart" id="brier" role="img" aria-label="Brier raw to temperature-scaled: 4B 0.830 to 0.517; 8B Q6 0.614 to 0.415; 8B Q8 0.601 to 0.411; 14B 0.488 to 0.399."></div>
+      <p class="note">Two-fold cross-validated: T is fitted on alternate items and scored on the rest, both ways round. The fitted T is about 10 for all four (9.6–12.8), so the overconfidence is systematic and a calibration step can remove much of it.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Reliability · Qwen3-14B Q4_K_M</div>
+    <h2>Raw, almost everything lands in the top bin</h2>
+    <div class="two">
+      <div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="sw dot" style="background:var(--gap)"></i>raw</span>
+          <span><i class="sw dot" style="background:var(--pick)"></i>with T = 10.6</span>
+          <span><i class="sw" style="background:var(--ink-3);height:2px;width:14px"></i>perfect calibration</span>
+        </div>
+        <div class="chart" id="rel" role="img" aria-label="Reliability diagram for the 14B model. Raw: 149 of 154 items at 0.996 mean confidence with 0.758 accuracy. With T 10.6 the points spread along the diagonal."></div>
+      </div>
+      <div class="eq">
+        <p class="note">Items are grouped into five confidence bins. Point area is the number of items in the bin; a point on the diagonal is perfectly calibrated.</p>
+        <p class="note"><strong>Raw:</strong> 149 of 154 answers sit in the 0.8–1.0 bin at a mean confidence of 0.996, and 75.8% of them are right.</p>
+        <p class="note"><strong>With T = 10.6:</strong> the answers spread across four bins that follow the diagonal. The top bin tips slightly underconfident (0.875 claimed, 100% right).</p>
+        <p class="note">This T is fitted on all 154 items, so this panel is illustrative. The cross-validated numbers are in the panel above.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Decision</div>
+    <div class="decision">
+      <h2>Default: Qwen3-14B Q4_K_M. Fallback: 8B Q6_K</h2>
+      <p>It had the best accuracy and the best Brier score, both raw and after temperature scaling, and it won every task. It fits beside klams' embedders at about 95 ms a call. It also uses the most VRAM, so if the embedders grow, 8B Q6_K (9.3 GiB peak) is the fallback, at about 9 points less accuracy.</p>
+    </div>
+    <h3>What comes next</h3>
+    <ul class="plain">
+      <li><strong>Calibration:</strong> fit a temperature for each task on the eval set. This data says one T already recovers about a third of the Brier score for the 4B and a fifth for the 14B.</li>
+      <li><strong>Routing input:</strong> before a korg routing consumer ships, try the work item's full text, fuller project descriptions and a few worked examples. That's prompt work, not a bigger model.</li>
+      <li><strong>002 — service:</strong> an HTTP endpoint on kubs0 with the model kept loaded.</li>
+    </ul>
+    <details>
+      <summary>All numbers as a table</summary>
+      <div class="tablewrap"><table id="table"></table></div>
+    </details>
+  </section>
+
+  <footer>
+    Eval set: 154 items. Route: 64 real korg work-item titles across 8 projects. Severity: 45 findings hand-labelled against kmon's rubric. Triage: 45 synthetic emails. Runtime: llama-cpp-python 0.3.35, CUDA 13.2, GGUFs from Qwen on Hugging Face. Source: <code>evals/results/*.json</code>; write-up in <code>sprints/001-scoring-core-and-bake-off.md</code>.
+  </footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const GPU = 16376, TEI = 2883;
+const MODELS = [
+  { id: "4B Q8_0",    pick: false, peak: 7720,  proc: 4832, load: 0.83, p50: 56, p95: 154, acc: 0.552, brier: 0.830, cv: 0.517, T: 12.8, ece: 0.412, conf: 0.964,
+    task: { route: [0.281, 1.317], severity: [0.711, 0.541], triage: [0.778, 0.426] } },
+  { id: "8B Q6_K",    pick: false, peak: 9568,  proc: 6680, load: 1.03, p50: 74, p95: 201, acc: 0.662, brier: 0.614, cv: 0.415, T: 9.6,  ece: 0.297, conf: 0.960,
+    task: { route: [0.422, 1.059], severity: [0.800, 0.346], triage: [0.867, 0.250] } },
+  { id: "8B Q8_0",    pick: false, peak: 11316, proc: 8428, load: 1.29, p50: 81, p95: 215, acc: 0.669, brier: 0.601, cv: 0.411, T: 9.6,  ece: 0.300, conf: 0.969,
+    task: { route: [0.422, 1.035], severity: [0.800, 0.360], triage: [0.889, 0.224] } },
+  { id: "14B Q4_K_M", pick: true,  peak: 11830, proc: 8942, load: 1.32, p50: 95, p95: 263, acc: 0.747, brier: 0.488, cv: 0.399, T: 10.6, ece: 0.242, conf: 0.983,
+    task: { route: [0.469, 1.039], severity: [0.911, 0.141], triage: [0.978, 0.052] } },
+];
+const TASKS = [
+  { key: "route", name: "Route a work item", n: 64, choices: 8 },
+  { key: "severity", name: "kmon severity", n: 45, choices: 3 },
+  { key: "triage", name: "Email triage", n: 45, choices: 3 },
+];
+// [n, mean confidence, accuracy] per 0.2-wide bin
+const REL = {
+  raw:      [[0,null,null],[0,null,null],[3,0.539,0.333],[2,0.716,0.5],[149,0.996,0.758]],
+  tempered: [[0,null,null],[12,0.363,0.5],[36,0.515,0.556],[53,0.698,0.679],[53,0.875,1.0]],
+};
+const ODDS = [["kmon", -0.59], ["kpidash", -0.80], ["karc", -20.92], ["k-homelab", -25.79]];
+
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; }
+function svg(w, h, host) { const s = el("svg", { viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: "xMinYMin meet" }); document.getElementById(host).appendChild(s); return s; }
+const pct = v => Math.round(v * 100) + "%";
+const gib = mib => (mib / 1024).toFixed(1) + " GiB";
+const col = m => m.pick ? "var(--pick)" : "var(--other)";
+
+// rounded right end, square left end anchored to the baseline
+function barPath(x, y, w, h, r = 4) {
+  r = Math.min(r, w, h / 2);
+  return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`;
+}
+
+// tooltip
+const tip = document.getElementById("tip");
+function hit(parent, attrs, html) {
+  const r = el("rect", { class: "hit", tabindex: 0, ...attrs }, parent);
+  const show = (x, y) => { tip.innerHTML = html; tip.hidden = false; place(x, y); };
+  r.addEventListener("pointermove", e => show(e.clientX, e.clientY));
+  r.addEventListener("pointerleave", () => { tip.hidden = true; });
+  r.addEventListener("focus", () => { const b = r.getBoundingClientRect(); show(b.left + b.width / 2, b.top); });
+  r.addEventListener("blur", () => { tip.hidden = true; });
+  return r;
+}
+function place(x, y) {
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let left = x + 14, top = y - h - 10;
+  if (left + w > innerWidth - 8) left = x - w - 14;
+  if (top < 8) top = y + 16;
+  tip.style.left = Math.max(8, left) + "px"; tip.style.top = top + "px";
+}
+
+// odds strip
+(function () {
+  const peak = Math.max(...ODDS.map(o => o[1]));
+  const z = peak + Math.log(ODDS.reduce((s, o) => s + Math.exp(o[1] - peak), 0));
+  const host = document.getElementById("odds");
+  for (const [name, lp] of ODDS) {
+    const p = Math.exp(lp - z);
+    const row = document.createElement("div");
+    row.className = "odds-row" + (name === "kpidash" ? " is-label" : "");
+    row.innerHTML = `<span class="mono">${name}</span><span class="mono num">${lp.toFixed(2)}</span><span class="bar"><i style="width:${(p * 100).toFixed(1)}%"></i></span><span class="mono num">${p < 0.001 ? "<0.1%" : (p * 100).toFixed(1) + "%"}</span>`;
+    host.appendChild(row);
+  }
+})();
+
+// VRAM stacked bars
+(function () {
+  const W = 760, L = 108, R = 16, rowH = 30, gap = 16, top = 8;
+  const H = top + MODELS.length * (rowH + gap) + 26;
+  const s = svg(W, H, "vram");
+  const x = mib => L + (mib / GPU) * (W - L - R);
+  for (let g = 0; g <= 16; g += 4) {
+    const gx = x(g * 1024);
+    el("line", { x1: gx, x2: gx, y1: top - 4, y2: H - 22, stroke: "var(--grid)", "stroke-width": 1 }, s);
+    txt(s, gx, H - 6, g + " GiB", { class: "axis", "text-anchor": g === 0 ? "start" : g === 16 ? "end" : "middle" });
+  }
+  MODELS.forEach((m, i) => {
+    const y = top + i * (rowH + gap);
+    txt(s, 0, y + rowH / 2 + 4, m.id, { class: "lab" });
+    const model = m.peak - TEI;
+    el("rect", { x: x(0), y, width: x(TEI) - x(0) - 1, height: rowH, fill: "var(--tei)" }, s);
+    el("path", { d: barPath(x(TEI) + 1, y, x(m.peak) - x(TEI) - 1, rowH), fill: col(m) }, s);
+    el("rect", { x: x(m.peak) + 2, y, width: Math.max(0, x(GPU) - x(m.peak) - 2), height: rowH, fill: "var(--free)" }, s);
+    txt(s, x(m.peak) + 8, y + rowH / 2 + 4, `${gib(m.peak)} · ${gib(GPU - m.peak)} free`, { class: "val" });
+    hit(s, { x: x(0), y: y - 4, width: x(GPU) - x(0), height: rowH + 8 },
+      `<b>Qwen3-${m.id}</b><br>Peak whole GPU: ${gib(m.peak)}<br>kodds process: ${gib(m.proc)}<br>klams TEI: ${gib(TEI)}<br>Free at peak: ${gib(GPU - m.peak)}`);
+  });
+  el("line", { x1: x(GPU), x2: x(GPU), y1: top - 4, y2: H - 22, stroke: "var(--ink-3)", "stroke-width": 1.5 }, s);
+})();
+
+// accuracy small multiples
+(function () {
+  const W = 760, panelW = (W - 2 * 24) / 3, L = 78, rowH = 20, gap = 10, top = 26;
+  const H = top + MODELS.length * (rowH + gap) + 24;
+  const s = svg(W, H, "acc");
+  TASKS.forEach((t, k) => {
+    const ox = k * (panelW + 24), x0 = ox + L, x1 = ox + panelW - 34;
+    const x = v => x0 + v * (x1 - x0);
+    txt(s, ox, 14, `${t.name}`, { class: "lab" });
+    txt(s, ox + panelW, 14, `n=${t.n}`, { class: "axis", "text-anchor": "end" });
+    for (const g of [0, 0.5, 1]) {
+      el("line", { x1: x(g), x2: x(g), y1: top - 4, y2: H - 20, stroke: "var(--grid)" }, s);
+      txt(s, x(g), H - 5, pct(g), { class: "axis", "text-anchor": g === 0 ? "start" : g === 1 ? "end" : "middle" });
+    }
+    MODELS.forEach((m, i) => {
+      const y = top + i * (rowH + gap), v = m.task[t.key][0];
+      txt(s, ox, y + rowH / 2 + 4, m.id, { "font-size": 11.5 });
+      el("path", { d: barPath(x(0), y, x(v) - x(0), rowH), fill: col(m) }, s);
+      txt(s, x(v) + 5, y + rowH / 2 + 4, pct(v), { class: "val" });
+      hit(s, { x: ox, y: y - 3, width: panelW, height: rowH + 6 },
+        `<b>Qwen3-${m.id} · ${t.name}</b><br>Accuracy ${pct(v)} of ${t.n}<br>Brier ${m.task[t.key][1].toFixed(3)}<br>Chance: ${pct(1 / t.choices)}`);
+    });
+    const cx = x(1 / t.choices);
+    el("line", { x1: cx, x2: cx, y1: top - 4, y2: H - 20, stroke: "var(--ink-3)", "stroke-dasharray": "3 3", "stroke-width": 1.2 }, s);
+  });
+})();
+
+// dumbbell helper
+function dumbbell(host, lo, hi, fmt, rows, ticks, colors, tipFn) {
+  const W = 380, L = 92, R = 62, rowH = 36, top = 8;
+  const H = top + rows.length * rowH + 22;
+  const s = svg(W, H, host);
+  const x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+  for (const g of ticks) {
+    el("line", { x1: x(g), x2: x(g), y1: top, y2: H - 20, stroke: "var(--grid)" }, s);
+    txt(s, x(g), H - 5, fmt(g), { class: "axis", "text-anchor": "middle" });
+  }
+  rows.forEach((r, i) => {
+    const y = top + i * rowH + rowH / 2;
+    txt(s, 0, y + 4, r.m.id, { class: "lab", "font-size": 11.5, fill: r.m.pick ? "var(--pick)" : null });
+    el("line", { x1: x(r.a), x2: x(r.b), y1: y, y2: y, stroke: colors[2], "stroke-width": 2 }, s);
+    el("circle", { cx: x(r.a), cy: y, r: 5.5, fill: colors[0], stroke: "var(--panel)", "stroke-width": 2 }, s);
+    el("circle", { cx: x(r.b), cy: y, r: 5.5, fill: colors[1], stroke: "var(--panel)", "stroke-width": 2 }, s);
+    txt(s, Math.max(x(r.a), x(r.b)) + 10, y + 4, r.label, { class: "val" });
+    hit(s, { x: 0, y: y - rowH / 2, width: W, height: rowH }, tipFn(r));
+  });
+}
+dumbbell("conf", 0.5, 1, pct,
+  MODELS.map(m => ({ m, a: m.acc, b: m.conf, label: "+" + Math.round((m.conf - m.acc) * 100) + " pts" })),
+  [0.5, 0.75, 1], ["var(--ink)", "var(--gap)", "var(--gap)"],
+  r => `<b>Qwen3-${r.m.id}</b><br>Accuracy ${pct(r.a)}<br>Mean confidence ${pct(r.b)}<br>ECE ${r.m.ece.toFixed(3)}`);
+dumbbell("brier", 0.3, 0.9, v => v.toFixed(1),
+  MODELS.map(m => ({ m, a: m.brier, b: m.cv, label: "−" + Math.round((1 - m.cv / m.brier) * 100) + "%" })),
+  [0.3, 0.5, 0.7, 0.9], ["var(--other)", "var(--good)", "var(--rule)"],
+  r => `<b>Qwen3-${r.m.id}</b><br>Brier raw ${r.a.toFixed(3)}<br>Brier with one T ${r.b.toFixed(3)}<br>Fitted T ${r.m.T}`);
+
+// reliability diagram
+(function () {
+  const W = 420, H = 370, L = 46, B = 40, T = 26, R = 30;
+  const s = svg(W, H, "rel");
+  const x = v => L + v * (W - L - R), y = v => H - B - v * (H - B - T);
+  for (const g of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+    el("line", { x1: x(g), x2: x(g), y1: y(0), y2: y(1), stroke: "var(--grid)" }, s);
+    el("line", { x1: x(0), x2: x(1), y1: y(g), y2: y(g), stroke: "var(--grid)" }, s);
+    txt(s, x(g), H - B + 16, g.toFixed(1), { class: "axis", "text-anchor": "middle" });
+    txt(s, L - 8, y(g) + 4, g.toFixed(1), { class: "axis", "text-anchor": "end" });
+  }
+  txt(s, x(0.5), H - 4, "mean confidence in the pick", { "text-anchor": "middle", "font-size": 11.5 });
+  const yl = txt(s, 12, y(0.5), "accuracy", { "text-anchor": "middle", "font-size": 11.5 });
+  yl.setAttribute("transform", `rotate(-90 12 ${y(0.5)})`);
+  el("line", { x1: x(0), y1: y(0), x2: x(1), y2: y(1), stroke: "var(--ink-3)", "stroke-width": 1.5, "stroke-dasharray": "4 3" }, s);
+  const rad = n => 3.5 + Math.sqrt(n) * 1.15;
+  const series = [["tempered", "var(--pick)", "with T = 10.6"], ["raw", "var(--gap)", "raw"]];
+  for (const [key, color, name] of series) {
+    const pts = REL[key].filter(b => b[0] > 0);
+    el("polyline", { points: pts.map(b => `${x(b[1])},${y(b[2])}`).join(" "), fill: "none", stroke: color, "stroke-width": 2, "stroke-opacity": 0.55 }, s);
+    for (const [n, c, a] of pts) {
+      el("circle", { cx: x(c), cy: y(a), r: rad(n), fill: color, "fill-opacity": 0.85, stroke: "var(--panel)", "stroke-width": 2 }, s);
+      const r = rad(n) + 4;
+      hit(s, { x: x(c) - r, y: y(a) - r, width: 2 * r, height: 2 * r },
+        `<b>${name}</b><br>${n} items<br>mean confidence ${c.toFixed(3)}<br>accuracy ${pct(a)}`);
+    }
+  }
+  txt(s, x(0.996) - rad(149) - 6, y(0.758) + 4, "149 items", { class: "val", "text-anchor": "end" });
+})();
+
+// table view
+(function () {
+  const t = document.getElementById("table");
+  const head = ["Model", "Peak GPU", "Process", "Load s", "p50 ms", "p95 ms", "Acc", "Brier", "Brier, one T", "T", "ECE", "Route", "Severity", "Triage"];
+  t.innerHTML = "<thead><tr>" + head.map(h => `<th>${h}</th>`).join("") + "</tr></thead><tbody>" +
+    MODELS.map(m => `<tr class="${m.pick ? "pick" : ""}"><td>Qwen3-${m.id}</td><td>${gib(m.peak)}</td><td>${gib(m.proc)}</td><td>${m.load.toFixed(1)}</td><td>${m.p50}</td><td>${m.p95}</td><td>${pct(m.acc)}</td><td>${m.brier.toFixed(3)}</td><td>${m.cv.toFixed(3)}</td><td>${m.T}</td><td>${m.ece.toFixed(3)}</td><td>${pct(m.task.route[0])}</td><td>${pct(m.task.severity[0])}</td><td>${pct(m.task.triage[0])}</td></tr>`).join("") +
+    "</tbody>";
+})();
+</script>
