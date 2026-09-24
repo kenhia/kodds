@@ -9,6 +9,10 @@ the box. Inspired by the "Jev" idea (and the parody
 Runs on kubs0 with a quantised Qwen3 GGUF via `llama-cpp-python`, alongside
 the klams embedding servers. Not general model serving — that is `kvllm`.
 
+How the default model was chosen — four Qwen3 builds compared on accuracy,
+calibration and VRAM: [the bake-off infographic](https://raw.githack.com/kenhia/kodds/main/docs/bakeoff-001.html)
+(source: [`docs/bakeoff-001.html`](docs/bakeoff-001.html)).
+
 ## Usage
 
 ```python
