@@ -62,7 +62,7 @@ tasks over HTTP and MCP at `https://kubs0.encke-wahoo.ts.net:7780`
 |---|---|
 | `GET /healthz` | model, GPU offload, VRAM, commit, per-task `calibrated` |
 | `GET /v1/tasks` | each task's inputs, choices and `calibrated` |
-| `POST /v1/classify` `{task, inputs}` | `{probs, raw, calibrated, model, top, latency_ms, queued_ms}` |
+| `POST /v1/classify` `{task, inputs, caller?}` | `{request_id, probs, raw, calibrated, model, top, latency_ms, queued_ms}` |
 | `POST /v1/score` `{prompt, choices, system?}` | raw probabilities, `calibrated: false` always |
 | `/mcp` | streamable-HTTP MCP: `list_tasks`, `classify`, `score` |
 
@@ -72,8 +72,14 @@ curl -s https://kubs0.encke-wahoo.ts.net:7780/v1/classify \
   -d '{"task":"severity","inputs":{"finding":"kubsdb: root fs at 97%"}}'
 ```
 
+**Calling it from another project?** Read
+[docs/consumers.md](docs/consumers.md): timeouts, failing soft, what
+`calibrated` licenses, and the input shape for each task.
+
 Threshold only on `calibrated: true` results; raw probabilities are
-overconfident. Inference is serialised (llama.cpp is not re-entrant), so
+overconfident. Every classify gets a `request_id` and one line in a mode-600
+JSONL log on kubs0 (`~/.local/share/kodds/calls/<YYYY-MM>.jsonl`), so a
+consumer that keeps the id can have its grade joined to what happened next. Inference is serialised (llama.cpp is not re-entrant), so
 concurrent callers queue (`queued_ms`). Deployed by `just deploy` via the
 [`deploy-kodds`](.claude/skills/deploy-kodds/SKILL.md) skill. Route's
 calibration is pinned to a private overlay:

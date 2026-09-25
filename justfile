@@ -156,6 +156,10 @@ deploy:
     print('model', h['model'], '| gpu_offload', h['gpu_offload'], '| commit', h['commit'], '| vram', h['vram_mib'])
     for n, t in h['tasks'].items():
         print(f\"  {n}: calibrated={t['calibrated']} overlay={t['overlay']}\")
+    log = h.get('call_log') or {}
+    print('call log', log.get('path'), '| writable', log.get('writable'))
+    if not log.get('writable'):
+        print('WARNING: the call log is not writable; classify still serves, but request ids will not join to anything', file=sys.stderr)
     ok = h['loaded'] and h['gpu_offload'] and h['commit'] == '$SHA'
     sys.exit(0 if ok else 'healthz does not show this release loaded on the GPU')
     "
