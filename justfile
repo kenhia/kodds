@@ -35,3 +35,15 @@ models:
 bakeoff:
     for m in {{models_dir}}/Qwen3-*.gguf; do uv run python evals/bakeoff.py "$m"; done
     uv run python evals/report.py
+
+# Rebuild the eval splits (route's text is fetched from korg into .scratch/)
+evalset:
+    uv run python evals/build_evalset.py
+
+# Score a task's split under prompt variants (GPU; e.g. `just sweep route cal content`)
+sweep task split +variants:
+    uv run python evals/sweep.py {{models_dir}}/Qwen3-14B-Q4_K_M.gguf {{task}} {{split}} {{variants}}
+
+# Compare calibration methods on the swept log-probs (no GPU); `--write <model>` saves the winners
+calibrate *args:
+    uv run python evals/calibrate.py {{args}}

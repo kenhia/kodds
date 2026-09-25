@@ -27,6 +27,25 @@ Each choice is scored as the summed log-prob of all its tokens plus the
 end-of-turn token, so multi-token choices and choices sharing a prefix are
 compared fairly. Raw probabilities are overconfident — see sprint 001.
 
+**Tasks** are the calibrated unit: a prompt template, a fixed choice list and
+per-model calibration, defined in [`tasks/`](tasks/).
+
+```python
+from kodds.tasks import load_tasks
+
+tasks = load_tasks()  # route, severity, triage
+result = tasks["severity"].classify(scorer, finding="kubsdb: root fs at 97%")
+result.probs  # calibrated for this model, if it has a fit
+result.calibrated  # False → raw probabilities (no fit for this model/prompt)
+```
+
+A calibration applies only to the model file, choice list and exact prompt
+it was fitted on; otherwise `classify` returns raw probabilities and says
+so. Routing's enriched project descriptions come from private korg data and
+live in a git-ignored overlay (`evals/build_evalset.py overlay`); without
+the overlay, `route` runs uncalibrated. See sprint 002 and
+[`evals/README.md`](evals/README.md).
+
 `llama-cpp-python` must be built with CUDA or it runs on the CPU:
 `CMAKE_ARGS="-DGGML_CUDA=on" uv sync --reinstall-package llama-cpp-python`.
 `just models` downloads the candidate GGUFs to `~/models/gguf`; `just

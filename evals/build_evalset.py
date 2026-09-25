@@ -1,142 +1,53 @@
-"""Build evals/evalset.jsonl — the labelled set the model bake-off runs on.
+"""Build kodds' eval data: fixed calibration / test (/ train) splits per task.
 
-Three homelab-shaped tasks, each line ``{task, prompt, choices, label}``:
+Every row is ``{task, id, split, inputs, label}``; ``inputs`` are the task's
+template fields (``tasks/<task>.toml``), so a row can be rendered under any
+prompt variant being compared.
 
-- ``route``    — which korg project owns a work item. Ground truth is the
-  project real korg work items were filed under (titles copied verbatim,
-  2026-09-24); the candidate projects' routing contracts are korg's own
-  one-line descriptions.
-- ``severity`` — kmon's three-way status call (ok / attention / problem) on a
-  single finding. Findings are written in kmon's shape and labelled by hand
-  against the rubric in kmon/controller.py ("THE THREE-WAY CALL").
-- ``triage``   — a generic message triage: legitimate / spam / phishing.
-  Synthetic messages, labelled by construction.
+- ``route``    — which korg project owns a work item. Real items from korg
+  history (title + content), labelled by the project each is filed under.
+  kodds is a public repo and korg is not, so only the *assignment* is
+  committed — ``evals/splits/route.json``, wi_number → label and split — and
+  the text is fetched from korg into git-ignored ``.scratch/evalset/`` when
+  this runs. (See ``evals/README.md``.)
+- ``severity`` — kmon's three-way call on a finding, labelled by hand against
+  the rubric in kmon/controller.py. Still hand-made: kmon doesn't log its calls.
+- ``triage``   — legitimate / spam / phishing, synthetic.
 
-Run: ``uv run python evals/build_evalset.py``. The JSONL is committed so the
-bake-off never depends on this script's environment; rerun it only when the
-source lists below change.
+Splits are fixed once, seeded, and never refitted: ``cal`` fits calibration
+(and chooses prompts), ``test`` only reports numbers, and route's ``train`` is
+the reserve for fine-tuning (sprints/planning/fine-tuning.md) and the source
+of few-shot examples, so neither ever borrows from test.
+
+    uv run python evals/build_evalset.py projects  # refresh route's choices from korg
+    uv run python evals/build_evalset.py splits    # ONE-TIME: fix route's split
+    uv run python evals/build_evalset.py           # write the JSONL
+    uv run python evals/build_evalset.py overlay   # route's private descriptions
 """
 
 import json
+import os
+import random
+import re
+import sys
+import urllib.request
+from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 
-OUT = Path(__file__).with_name("evalset.jsonl")
+HERE = Path(__file__).parent
+ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+from evaldata import PRIVATE, PUBLIC, SPLITS, load
 
-# --- route -----------------------------------------------------------------
+KORG = os.environ.get("KORG_URL", "http://kubsdb:5674")
+ROUTE_TOML = ROOT / "tasks" / "route.toml"
+SEED = 2026
+PER_SPLIT_CAP = 12  # route items per project in each of cal and test
+# Active korg projects that are never a destination for real work.
+NOT_ROUTABLE = {"eval"}
 
-PROJECTS = {
-    "klams": "Shared cross-agent memory: storage, retrieval, attribution, trust, "
-    "the MCP surface.",
-    "korg": "The work-tracking system itself: data model, MCP surface, server, web UI.",
-    "kaed": "Ken's Agent Editor: agent-only file editing over HTTP MCP — contract, "
-    "Rust daemon, per-host deploys, secrets handling.",
-    "k-homelab": "Changing homelab machine state: installing software, system "
-    "config, fleet recipes, audit, disaster recovery.",
-    "kmon": "Scheduled read-only homelab monitoring: collect, synthesize, verify, "
-    "report. kmon's own development work lands here.",
-    "karc": "Ken's Agent Remote Control: launch, tail, steer and gate headless "
-    "Claude Code sprint legs on other hosts.",
-    "kvllm": "Serving local models on kai's 5090 via vLLM, plus the eval suites, "
-    "judge and leaderboard.",
-    "kpidash": "The Pi5 KPI dashboard: LVGL renderer, Redis contracts, client "
-    "cards and panels.",
-}
-
-ROUTE_ITEMS = {
-    "klams": [
-        "[P1] Oversized chunks silently dropped — pass API 8192 check, then TEI 413 at the worker",
-        "Recall quality: hand-authored gotchas lose to scanner-ingested code, incl. from deprecated repos",
-        "Rework the authorization model: explicit trust grants, token-implied authorship, close the register_author backdoor",
-        "REST routes enforce no scopes — a read-only token can delete knowledge and promote dissents",
-        "Markdown chunker is fence-unaware — # comments inside code blocks become headings, shedding content-free chunks",
-        'Scanner records repo as the scan-root basename — 218k of 222k points say repo="src"',
-        "Query-time dedupe by content_hash + expose content_hash/author.id/heading_path in the search projection",
-        "Weighted fusion: provenance (curated vs bulk) and declared-volatility weighting in ranking — eval-gated",
-    ],
-    "korg": [
-        "Shared fetch/error surface in the web UI — no silent failures",
-        "Modal focus management, labeled inputs, and proper row activation",
-        "Fix fresh-install node sequence so node/WI #1 can exist",
-        "Sprint proposals: display and filter by project (list_proposals + Planning page)",
-        "Accept project by name wherever project_id is accepted, with an actionable unknown-name error",
-        "MCP server instructions claim an envelope five collection reads don't return",
-        "Ability to attach screen captures to WI's",
-        "Clicking on background or other area should close filter dropdowns",
-    ],
-    "kaed": [
-        "Version stamp: `--version` says 0.1.0 on every build, so no recipe can assert freshness",
-        "Fleet deployed-ness is not discoverable from the client: a deferred host looks identical to a failed deploy",
-        "Host-qualify root names and make the declared fleet part of the `roots` response",
-        "`feedback` tool, re-shaped: fire at the moment of friction, not as a standing invitation",
-        "Secrets slice 1: `.kaedignore`, in-file marker, structured refusal reasons, gitignore warning",
-        "History tools: `journal`, `diff`, `revert`, plus a read path for `txn_failures`",
-        "Gateway peer mode: proxy to peers with identity propagation and fleet-wide search",
-        "Secrets slice 4: write-side leak detection and the cross-file occurrence index",
-    ],
-    "k-homelab": [
-        "Fold in: klams-service backup.conf systemd drop-in on kubs0",
-        "Prometheus/Grafana image refresh on kubsdb",
-        "Fold in: OpenSearch decommissioned on kubs0",
-        "Rotate the kubsdb service passwords (postgres, mongo, redis) + rpi53 redis",
-        "ksandbox first recipes: incus substrate (incus + vmlab pool + incus-docker-fw), thin baseline, dr/ksandbox.md",
-        "Install Go from a pinned upstream release on two homelab machines",
-        "Decommission /krag NVMe on kubs0 — krag inactive, 1.8T disk idle",
-        "dr/kubsdb.md step 8 restores korg's database but never recreates the `korg` role",
-    ],
-    "kmon": [
-        "Weekly k-homelab drift report — its own korg report source, not a section of the daily",
-        "Harden scheduled tools: blocking errors must file a korg report, not die silently",
-        "Investigation probes ignore systemd scope — user units read as deleted, and our own timer is one",
-        "verify.py false positive traps the monitor in a self-sustaining failure loop under systemd",
-        "Unit-level suppression + expiry for suppressions.toml",
-        "Add cross-mount storage-balance check (data on the wrong volume)",
-        "A same-day re-run overwrites the previous report — keep the superseded run, don't discard it",
-        "Overwatch v1: compare against yesterday's bundle, cross-reference listeners and timers against the k-homelab manifest",
-    ],
-    "karc": [
-        "Spike: one systemd user unit per turn — launch, resume, and outlive the ssh session",
-        "Ship-gate hook with Bash and Skill matchers, plus what headless mode does with AskUserQuestion",
-        "Lock module: kaed-path prefix conflicts, TOML lock file at .git/karc.lock, startup reconcile — with tests",
-        "`tail`: the event projection and its cursor — what the overseer reads instead of raw stream-json",
-        "PD-6: what a leg is allowed to reach — decide the MCP toolbox for unattended legs",
-        "`send`: a resume turn on an idle or asked leg — refused while a turn runs, banner-derived status afterwards",
-        "`stop` and `stop --abandon`: end the current turn, terminal state, lock kept unless abandoned",
-        "kubs0 instance + kai as gateway: host-qualified legs, peer tokens, `list`/`launch` proxied and journaled on the target",
-    ],
-    "kvllm": [
-        "Serving ergonomics: model registry + serve recipes + quant notes + /v1 contract",
-        "Availability: systemd unit + auto-restart on kai reboot",
-        "Model collection research — best free coding/agentic models that fit a 5090",
-        "Eval harness v2 (Inspect AI, sandboxed agentic+coding, weighted leaderboard)",
-        "Vision v2: classification, captioning, render-QA",
-        "Bump vLLM 0.24.0 → 0.26.x for Gated DeltaNet support",
-        "Land a qwen3.8-27b registry entry that actually serves on the 5090",
-        "Establish the eval suite's noise floor (N repeated runs) before reading any leaderboard gap",
-    ],
-    "kpidash": [
-        'Add nerdfont icon `f0a07` and use it for the rpidash "self service card"',
-        'klam\'s service card shows "unreachable" at times when `klams` is up',
-        "Service Card: kmon status with staleness alerting",
-        "Dashboard burns ~1.6 cores on rpi53: per-task pthread handshake × 8,100 chart line segments/sec",
-        '"<host> stale" indicator in the service row for any homelab host except rpi53',
-        "A service that has never published renders as no card, not as RED",
-        "Service Card text: a character outside the panel font floods the journal, and the card contract never says which characters are safe",
-        'A host that is down across a dashboard restart shows no card — admission-on-data has no durable "has published" marker',
-    ],
-}
-
-
-def route_prompt(title: str) -> str:
-    lines = "\n".join(f"- {name}: {desc}" for name, desc in PROJECTS.items())
-    return (
-        "You route work items to the homelab project that owns them.\n\n"
-        f"Projects:\n{lines}\n\n"
-        f"Work item: {title}\n\n"
-        "Answer with the project name only."
-    )
-
-
-# --- severity --------------------------------------------------------------
+# --- severity / triage ------------------------------------------------------
 
 SEVERITY_ITEMS = {
     "ok": [
@@ -193,20 +104,6 @@ SEVERITY_ITEMS = {
 }
 
 
-def severity_prompt(finding: str) -> str:
-    return (
-        "You grade homelab monitoring findings. The status is what Ken does with "
-        "the report:\n"
-        "- ok: nothing needs doing, or the finding only needs recording.\n"
-        "- attention: a human needs to decide or act, but not urgently.\n"
-        "- problem: escalate now; Ken gets woken up for this.\n\n"
-        f"Finding: {finding}\n\n"
-        "Answer with ok, attention or problem only."
-    )
-
-
-# --- triage ----------------------------------------------------------------
-
 TRIAGE_ITEMS = {
     "legitimate": [
         "From: GitHub <noreply@github.com> — [kenhia/korg] PR #412 merged: 'list_projects gains omitted counts'.",
@@ -262,50 +159,207 @@ TRIAGE_ITEMS = {
 }
 
 
-def triage_prompt(message: str) -> str:
-    return (
-        "You triage incoming email.\n"
-        "- legitimate: real mail the recipient expects or would want.\n"
-        "- spam: unsolicited bulk advertising or junk, not trying to steal anything.\n"
-        "- phishing: tries to steal credentials, money or secrets by impersonation.\n\n"
-        f"Message: {message}\n\n"
-        "Answer with legitimate, spam or phishing only."
+def stratified(items: dict[str, list[str]], n_cal: int) -> list[tuple[str, str, str]]:
+    """(label, text, split) per item: ``n_cal`` of each label to cal, rest test."""
+    out = []
+    for label, texts in items.items():
+        order = list(range(len(texts)))
+        random.Random(f"{SEED}:{label}").shuffle(order)
+        for rank, i in enumerate(order):
+            out.append((label, texts[i], "cal" if rank < n_cal else "test"))
+    return out
+
+
+# --- route (korg) -----------------------------------------------------------
+
+
+def korg_get(path: str):
+    with urllib.request.urlopen(f"{KORG}{path}", timeout=60) as r:
+        return json.load(r)
+
+
+def korg_work_items() -> list[dict]:
+    items, offset = [], 0
+    while True:
+        page = korg_get(
+            f"/api/work-items?limit=500&offset={offset}&wi_status=all&archived=all"
+        )
+        items += page["items"]
+        offset += 500
+        if offset >= page["total"]:
+            return items
+
+
+def route_choices() -> list[str]:
+    import tomllib
+
+    return list(tomllib.loads(ROUTE_TOML.read_text())["choices"])
+
+
+def refresh_projects() -> None:
+    """Rewrite route.toml's trailing ``[choices]`` table from korg's active projects."""
+    projects = korg_get("/api/projects")
+    active = [
+        p
+        for p in projects
+        if p.get("status", "active") == "active" and p["name"] not in NOT_ROUTABLE
+    ]
+    table = "".join(
+        f"{json.dumps(p['name'])} = {json.dumps(p['description'], ensure_ascii=False)}\n"
+        for p in sorted(active, key=lambda p: p["name"].lower())
     )
+    text = ROUTE_TOML.read_text()
+    head = text[: text.index("[choices]\n")]
+    ROUTE_TOML.write_text(f"{head}[choices]\n{table}")
+    print(f"{len(active)} routable projects written to {ROUTE_TOML}")
 
 
-def rows():
-    route_choices = list(PROJECTS)
-    for label, titles in ROUTE_ITEMS.items():
-        for title in titles:
-            yield {
+def fix_route_splits() -> None:
+    path = SPLITS / "route.json"
+    if path.exists():
+        sys.exit(f"{path} exists — splits are fixed once; delete it deliberately")
+    choices = set(route_choices())
+    by_project: dict[str, list[int]] = {}
+    for wi in korg_work_items():
+        if (
+            wi["project"] in choices
+            and not wi["archived"]
+            and (wi["content"] or "").strip()
+        ):
+            by_project.setdefault(wi["project"], []).append(wi["wi_number"])
+    rows = []
+    for project, wis in sorted(by_project.items()):
+        wis.sort()
+        random.Random(f"{SEED}:{project}").shuffle(wis)
+        k = min(PER_SPLIT_CAP, len(wis) * 2 // 5)
+        for rank, wi in enumerate(wis):
+            split = "cal" if rank < k else "test" if rank < 2 * k else "train"
+            rows.append((wi, project, split))
+    rows.sort()
+    SPLITS.mkdir(exist_ok=True)
+    body = ",\n".join(json.dumps(r) for r in rows)
+    path.write_text(
+        "{\n"
+        f' "seed": {SEED},\n'
+        f' "snapshot": "{datetime.now(UTC).date()}",\n'
+        f' "rule": "per project: min({PER_SPLIT_CAP}, 40%) to cal, as many to test, '
+        'the rest to train",\n'
+        f' "items": [\n{body}\n ]\n}}\n'
+    )
+    print(f"{len(rows)} route items assigned: {Counter(r[2] for r in rows)}")
+
+
+def route_rows() -> list[dict]:
+    fixed = json.loads((SPLITS / "route.json").read_text())["items"]
+    korg = {wi["wi_number"]: wi for wi in korg_work_items()}
+    rows, missing, refiled = [], [], []
+    for wi, label, split in fixed:
+        item = korg.get(wi)
+        if item is None:
+            missing.append(wi)
+            continue
+        if item["project"] != label:
+            refiled.append(wi)  # keep the fixed label; say so
+        rows.append(
+            {
                 "task": "route",
-                "prompt": route_prompt(title),
-                "choices": route_choices,
+                "id": f"wi-{wi}",
+                "split": split,
+                "inputs": {"title": item["title"], "content": clean(item["content"])},
                 "label": label,
             }
-    for label, findings in SEVERITY_ITEMS.items():
-        for finding in findings:
-            yield {
-                "task": "severity",
-                "prompt": severity_prompt(finding),
-                "choices": ["ok", "attention", "problem"],
-                "label": label,
-            }
-    for label, messages in TRIAGE_ITEMS.items():
-        for message in messages:
-            yield {
-                "task": "triage",
-                "prompt": triage_prompt(message),
-                "choices": ["legitimate", "spam", "phishing"],
-                "label": label,
-            }
+        )
+    if missing or refiled:
+        print(
+            f"route: {len(missing)} gone from korg {missing}, {len(refiled)} refiled since the split {refiled}"
+        )
+    return rows
+
+
+def clean(text: str) -> str:
+    return re.sub(r"\n{3,}", "\n\n", text.strip())
+
+
+def route_descriptions(
+    contracts: dict[str, str], per_project: int = 3, notes_cap: int = 200
+) -> dict[str, str]:
+    """Each project's contract, a notes excerpt and example titles from train.
+
+    What #3193 measured best. It is private korg content, so it ships as the
+    git-ignored overlay ``tasks/private/route.json``, never in route.toml.
+    """
+    train = load("route", "train")
+    random.Random(SEED).shuffle(train)
+    titles: dict[str, list[str]] = {}
+    for row in train:
+        picked = titles.setdefault(row["label"], [])
+        if len(picked) < per_project:
+            picked.append(row["inputs"]["title"])
+    notes = {p["name"]: p.get("notes") or "" for p in korg_get("/api/projects")}
+    described = {}
+    for name, contract in contracts.items():
+        extra = " ".join(notes.get(name, "").split())
+        if notes_cap and extra:
+            cut = extra[:notes_cap] + ("…" if len(extra) > notes_cap else "")
+            contract = f"{contract} {cut}"
+        described[name] = contract + "".join(
+            f'\n    e.g. "{t}"' for t in titles.get(name, [])
+        )
+    return described
+
+
+def write_route_overlay() -> None:
+    import tomllib
+
+    contracts = tomllib.loads(ROUTE_TOML.read_text())["choices"]
+    path = ROOT / "tasks" / "private" / "route.json"
+    path.parent.mkdir(exist_ok=True)
+    body = {"descriptions": route_descriptions(contracts)}
+    path.write_text(json.dumps(body, indent=1, ensure_ascii=False) + "\n")
+    print(f"wrote {path.relative_to(ROOT)} (git-ignored)")
+
+
+# --- output -----------------------------------------------------------------
+
+
+def write(rows: list[dict], directory: Path) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for row in rows:
+        groups.setdefault((row["task"], row["split"]), []).append(row)
+    for (task, split), group in sorted(groups.items()):
+        path = directory / f"{task}.{split}.jsonl"
+        path.write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in group)
+        )
+        print(f"{path.relative_to(ROOT)}: {len(group)}")
 
 
 def main() -> None:
-    with OUT.open("w") as f:
-        for row in rows():
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    public = []
+    for task, field, items in (
+        ("severity", "finding", SEVERITY_ITEMS),
+        ("triage", "message", TRIAGE_ITEMS),
+    ):
+        for n, (label, text, split) in enumerate(stratified(items, n_cal=7)):
+            public.append(
+                {
+                    "task": task,
+                    "id": f"{task}-{n}",
+                    "split": split,
+                    "inputs": {field: text},
+                    "label": label,
+                }
+            )
+    write(public, PUBLIC)
+    write(route_rows(), PRIVATE)
 
 
 if __name__ == "__main__":
-    main()
+    command = sys.argv[1] if len(sys.argv) > 1 else "build"
+    {
+        "projects": refresh_projects,
+        "splits": fix_route_splits,
+        "build": main,
+        "overlay": write_route_overlay,
+    }[command]()

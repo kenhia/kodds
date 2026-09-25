@@ -1,0 +1,24 @@
+{"task": "triage", "id": "triage-7", "split": "test", "inputs": {"message": "From: Hugging Face <no-reply@huggingface.co> — Qwen/Qwen3-8B-GGUF has a new revision you follow."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-8", "split": "test", "inputs": {"message": "From: Raspberry Pi Ltd <newsletter@raspberrypi.com> — New in the shop: the Pi 5 16GB. Unsubscribe any time."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-9", "split": "test", "inputs": {"message": "From: GitHub <noreply@github.com> — [kenhia/korg] PR #412 merged: 'list_projects gains omitted counts'."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-10", "split": "test", "inputs": {"message": "From: Amazon <shipment-tracking@amazon.com> — Your order of 2 x Crucial 32GB DDR5 has shipped; arriving Thursday."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-11", "split": "test", "inputs": {"message": "From: Mom — Are you still coming Sunday? Dad wants to show you the new brickshooter levels."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-12", "split": "test", "inputs": {"message": "From: Backblaze <no-reply@backblaze.com> — Weekly report: 2.1 TB backed up, no errors."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-13", "split": "test", "inputs": {"message": "From: GitHub <noreply@github.com> — Dependabot opened 3 pull requests on kenhia/kvllm."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-14", "split": "test", "inputs": {"message": "From: Dr. Patel's office — Reminder: your appointment is Tuesday at 2:30 PM. Reply C to confirm."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-22", "split": "test", "inputs": {"message": "From: Mega Lottery International — Buy 5 tickets, get 5 free for this week's $400M draw."}, "label": "spam"}
+{"task": "triage", "id": "triage-23", "split": "test", "inputs": {"message": "From: Deals Daily <promo@dealz-blast.biz> — 🔥 90% OFF designer watches TODAY ONLY!!! Click to shop."}, "label": "spam"}
+{"task": "triage", "id": "triage-24", "split": "test", "inputs": {"message": "From: Miracle Hair — Regrow a full head of hair in 2 weeks — doctors hate this trick."}, "label": "spam"}
+{"task": "triage", "id": "triage-25", "split": "test", "inputs": {"message": "From: Hot Singles Near You — 3 women in your area want to meet tonight."}, "label": "spam"}
+{"task": "triage", "id": "triage-26", "split": "test", "inputs": {"message": "From: Replica Watches — Rolex, Omega, Tag Heuer replicas, 1:1 quality, worldwide shipping."}, "label": "spam"}
+{"task": "triage", "id": "triage-27", "split": "test", "inputs": {"message": "From: List Broker — Purchase 2 million verified B2B email contacts for $149."}, "label": "spam"}
+{"task": "triage", "id": "triage-28", "split": "test", "inputs": {"message": "From: SEO Experts — We noticed your site isn't ranking on page 1. Our team can fix that for $99."}, "label": "spam"}
+{"task": "triage", "id": "triage-29", "split": "test", "inputs": {"message": "From: Extended Warranty Dept — Final notice: your vehicle's factory warranty is about to expire."}, "label": "spam"}
+{"task": "triage", "id": "triage-37", "split": "test", "inputs": {"message": "From: Coinbase Support — Your wallet is frozen. Enter your recovery phrase to verify ownership."}, "label": "phishing"}
+{"task": "triage", "id": "triage-38", "split": "test", "inputs": {"message": "From: Tailscale <admin@tailscale-security.net> — A new device joined your tailnet. If this wasn't you, re-enter your credentials here."}, "label": "phishing"}
+{"task": "triage", "id": "triage-39", "split": "test", "inputs": {"message": "From: Chase Bank — We detected a suspicious charge of $1,249.00. Call this number and give the code we text you."}, "label": "phishing"}
+{"task": "triage", "id": "triage-40", "split": "test", "inputs": {"message": "From: USPS — Your package could not be delivered. Pay a $1.99 redelivery fee: usps-redelivery-track.info"}, "label": "phishing"}
+{"task": "triage", "id": "triage-41", "split": "test", "inputs": {"message": "From: Google Workspace — Shared file 'Payroll_Q3.xlsx' — sign in with your Google password to view."}, "label": "phishing"}
+{"task": "triage", "id": "triage-42", "split": "test", "inputs": {"message": "From: CEO (via Gmail) — I'm in a meeting, need you to buy 5 $200 gift cards and send me the codes asap."}, "label": "phishing"}
+{"task": "triage", "id": "triage-43", "split": "test", "inputs": {"message": "From: GitHub Security <security@github-verify-account.com> — Unusual sign-in detected. Verify your account within 24 hours or it will be suspended: http://github-verify-account.com/login"}, "label": "phishing"}
+{"task": "triage", "id": "triage-44", "split": "test", "inputs": {"message": "From: Apple ID — Your Apple ID was used to sign in on a new iPhone in Moscow. Unlock your account at apple-id-unlock.com"}, "label": "phishing"}

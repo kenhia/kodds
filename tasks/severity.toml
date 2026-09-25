@@ -1,0 +1,17 @@
+# kmon's three-way call on one finding (rubric: kmon/controller.py,
+# "THE THREE-WAY CALL"). Prompt unchanged from 001's eval set.
+name = "severity"
+template = """You grade homelab monitoring findings. The status is what Ken does with the report:
+{choice_list}
+
+Finding: {finding}
+
+Answer with ok, attention or problem only."""
+
+[limits]
+finding = 2000
+
+[choices]
+ok = "nothing needs doing, or the finding only needs recording."
+attention = "a human needs to decide or act, but not urgently."
+problem = "escalate now; Ken gets woken up for this."

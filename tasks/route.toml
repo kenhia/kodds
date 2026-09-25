@@ -1,0 +1,75 @@
+# Which korg project owns a work item. The choices are korg's active projects
+# with their one-line routing contracts, refreshed by
+# `evals/build_evalset.py projects` (it rewrites the [choices] table, which
+# must stay last). A refresh that changes the list voids this task's
+# calibration until it is refitted.
+#
+# The prompt that ships (sprint 002, #3193) enriches each contract with a
+# korg notes excerpt and three example titles. That is private korg content,
+# so it comes from the git-ignored overlay tasks/private/route.json
+# (`evals/build_evalset.py overlay`). Without the overlay the prompt differs,
+# the calibration's prompt hash no longer matches, and route serves raw
+# probabilities.
+name = "route"
+template = """You route work items to the homelab project that owns them.
+
+Projects:
+{choice_list}
+
+Work item: {title}
+
+{content}
+
+Answer with the project name only."""
+
+[limits]
+title = 300
+content = 1500
+
+[choices]
+"agent-projects" = "Pitches from the rotating model-proposal experiment, one area per proposing agent. Accepted work moves to the project that owns it — this tracks the pitching."
+"agent-skills" = "Writing and distributing Ken's Claude agent skills, including the tailnet endpoints and host names they embed. Not harness conventions (kprojects)."
+"agent-wiki" = "The agents-only wiki: its content conventions and the tooling that maintains it. Not shared agent memory (klams) — this is the consolidation layer above it."
+"apt-temps" = "Govee H5075 Bluetooth temperature/humidity sensors: read, name, publish to kpidash. Runs on kubsdb, the box with the BLE adapter."
+"ATV" = "Retired ATV-Starter Kit / ATV-Phoenix agent harness, kept for reference. Replaced by kprojects — new harness work belongs there."
+"claude-cleo" = "Cross-machine chores driven from the desktop Claude on cleo, with no repo of their own. Not machine config (k-homelab) or skills (agent-skills)."
+"cross-project-planning" = "Guiding plans for project clusters sharing contracts (korg+ first). Contracts/decisions only — work queues are korg's; harness conventions are kprojects."
+"gh-kenhia" = "Triage of Ken's GitHub repos that have no active local work: revive, archive, or delete. Repos with a live project route to that project instead."
+"gratch" = "Work on Ken's Obsidian vault itself — structure, templates, vault tooling. The notes inside it are content, not work items."
+"homelab-ai" = "Planning for the homelab AI programme: workstreams as areas, sprint-sized WIs, depends_on edges. Planning only — code lands in kyac, kmon, klams."
+"homelab-health" = "Machine-observed findings on homelab hosts, one area per host — filed by kmon. Not kmon's own development; that's the kmon project."
+"hv-simulator" = "Honorverse (David Weber) space-travel simulator — realistic in-universe flight times in real wall-clock time (FastAPI + SQLite ship-sim microservice)."
+"k-homelab" = "Changing homelab machine state: installing software, system config, fleet recipes, audit, disaster recovery. Not harness conventions (kprojects)."
+"kaed" = "Ken's Agent Editor: agent-only editing over HTTP MCP — contract, Rust daemon, per-host deploys. Not agent memory (klams) or work tracking (korg)."
+"kagviz" = "Extracting and visualizing how an agent session went, from Claude Code session transcripts. Not agent field notes — that's `ai-findings`."
+"kapollo" = "Apollo-DM-style split-pad terminal that wraps your real shell (Rust/ratatui)"
+"karc" = "Ken's Agent Remote Control: launch, tail, steer and gate headless Claude Code sprint legs on other hosts. Not local-model agents (kyac) or file edits (kaed)."
+"kbrickshoot" = "Faithful BrickShooter Classic clone for Ken's dad: rules engine, Svelte board, offline build, and the desktop app that gives it saved games."
+"kctrldeck" = "Windows control deck: touch modes plus window focus/launch and the kvscf remote channel in one app. Succeeds kxeneon and kvscf — their new work lands here."
+"kdashdata" = "Owns dashboard data movement: Redis feed contracts, shared C/LVGL consumer lib, thin client wrappers. Not the dashboards themselves — they consume this."
+"kdeskdash" = "The RPi5 touch shell: multi-mode LVGL UI over DRM/evdev with optional Redis control. Not the glanceable KPI dashboard (kpidash) or its korg feed (korg-dash)."
+"kfdc" = "The overseer board web app (KFDC) and its curator agent. Not korg data-model changes — that's korg; not the kdeskdash Pi summary feed — that's korg-dash."
+"kfo" = "The judgment/targeting pass over korg — scouting reports, prioritization, tier rules. Not the board or curator (kfdc), not korg data-model changes (korg)."
+"khlenv" = "Homelab config/endpoint resolution with stem-variable fallback: store, resolver, clients. Registry only — no health checks (kmon), no secrets (krot)."
+"klams" = "Shared cross-agent memory: storage, retrieval, attribution, trust, the MCP surface. Not its LLM analysis (klams-mind) or its web UI (klams-view)."
+"klams-mind" = "LLM intelligence over klams: extraction, contradiction detection, consolidation, retrieval evals. A client of klams — never touches its stores."
+"klams-view" = "Web viewer and dashboard for klams — activity, metrics, search workbench, dissents. UI only; klams owns storage, klams-mind owns analysis."
+"klaude-top" = "Live telemetry proving a running Claude Code agent is still working: /proc + transcript sampling, TUI and feed. Not retrospectives (kagviz) or steering (karc)."
+"kmon" = "Scheduled read-only homelab monitoring: collect, synthesize, verify, report. Its findings file to homelab-health; kmon's own dev work lands here."
+"kmuster" = "Repo-state collection, store and queries: where every git clone lives and its condition. Not the daily report — that's kmon; not the UI/MCP — that's korg."
+"knarr" = "Fleet deploy runner (Go): store-native deploys with structured status, CLI+MCP. Not publish/store tooling (per-repo just publish, kpkg) or config (k-homelab)."
+"kodds" = "Local LLM classification: prompt + choices → per-choice probabilities from next-token logits (Jev-style). Not general model serving — that's `kvllm`."
+"korg" = "The work-tracking system itself: data model, MCP surface, server. Not the board that renders it (kfdc), its judgment pass (kfo), or the Pi feed (korg-dash)."
+"korg-dash" = "Rolls korg up into glanceable summaries for kdeskdash's infographic mode. Not korg itself, and not kdeskdash's renderer."
+"kpidash" = "The Pi5 KPI dashboard: LVGL renderer, Redis contracts, client cards and panels. Not the Windows reporter (kpidashclient-win), not the LVGL shell (kdeskdash)."
+"kpidashclient-win" = "Windows-native background client for kpidash: reports cleo's host telemetry to the dashboard. Not the dashboard itself (kpidash), not the Pi renderer."
+"kpolice" = "Fleet cleanup runner: prunes runaway build caches in a repo, no-ops on ones it can't handle. Not deploys (knarr), not repo state (kmuster)."
+"kprojects" = "The minimal agent harness: sprints/, docs/, .scratch/, `just check`, and the managed instruction block in CLAUDE.md. Conventions — not skills (agent-skills)."
+"krcmd" = "Signed remote-command tool — krrr's successor. SSHSIG-authenticated commands between homelab hosts; launches VS Code / Insiders from kai and kubs0."
+"krot" = "Homelab token/secret rotation: the registry of secrets/procedures/consumers and the krot CLI/GUI. Not the services' own token tooling — that's kaed/klams."
+"kstudiodash" = "The kstudio big-panel dashboard: LVGL over fbdev on the Studio's 4500×3000. Not the Pi shell (kdeskdash) or KPI feed contracts (kpidash) — it borrows from both."
+"ktail" = "Fleet log multiplexer (Go): tail many hosts' journals as one stream. Not deploys — that's `knarr`; not alerting or findings — that's `kmon`."
+"kvllm" = "Serving local models on kai's 5090 via vLLM, plus the eval suites, judge and leaderboard. Not the agents that call it (kyac, kmon, klams-mind)."
+"kwebi" = "Ken's web index — a landing page for homelab https endpoints behind tailscale, mirroring some status. Not the dashboard itself (kpidash)."
+"kyac" = "LangChain/LangGraph homelab controller, multae-viae's successor: CLI + web chat over a gated local agent, klams memory, korg write-back."
+"mortars" = "Four Douse — kid-friendly, procedure-authentic water-balloon mortar simulator: FDC drill, ballistics, and the Three.js scene."

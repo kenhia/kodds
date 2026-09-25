@@ -42,6 +42,14 @@ def test_multi_token_choices_sharing_a_prefix(scorer):
     assert probs["Mars"] > probs["Mercury"]
 
 
+def assert_same_distribution(warm: dict, cold: dict) -> None:
+    # Prompts are evaluated in fixed position-aligned blocks, so a cached
+    # prompt is computed exactly as a cold one is: same numbers, not merely
+    # close ones (differently split batches would differ by up to ~1 nat).
+    for choice, value in warm.items():
+        assert math.isclose(value, cold[choice], abs_tol=1e-6)
+
+
 def test_prefix_reuse_matches_a_cold_evaluation(backend, scorer):
     prompt, choices = "Is water wet? Answer yes or no.", ["yes", "no"]
     warm = scorer.logprobs(prompt, choices)
@@ -49,5 +57,15 @@ def test_prefix_reuse_matches_a_cold_evaluation(backend, scorer):
     for choice in choices:
         backend.llm.reset()  # force the uncached path for each choice
         cold.update(scorer.logprobs(prompt, [choice]))
-    for choice in choices:
-        assert math.isclose(warm[choice], cold[choice], abs_tol=1e-2)
+    assert_same_distribution(warm, cold)
+
+
+def test_shared_prompt_prefix_matches_a_cold_evaluation(backend, scorer):
+    # Two prompts sharing a long head: the second call keeps the head's KV.
+    head = "Projects:\n" + "".join(f"- p{i}: project number {i}\n" for i in range(60))
+    choices = ["alpha", "beta"]
+    scorer.logprobs(head + "Item: slow SQL query", choices)
+    warm = scorer.logprobs(head + "Item: button misaligned", choices)
+    backend.llm.reset()
+    cold = scorer.logprobs(head + "Item: button misaligned", choices)
+    assert_same_distribution(warm, cold)

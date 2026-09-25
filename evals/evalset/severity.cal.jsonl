@@ -1,0 +1,21 @@
+{"task": "severity", "id": "severity-0", "split": "cal", "inputs": {"finding": "kubsdb: Grafana image one minor version behind upstream; no advisories."}, "label": "ok"}
+{"task": "severity", "id": "severity-1", "split": "cal", "inputs": {"finding": "ksandbox: 6 trial containers created and destroyed overnight — host is substrate collect_mode, churn is by design."}, "label": "ok"}
+{"task": "severity", "id": "severity-2", "split": "cal", "inputs": {"finding": "kai: journal size 1.9 GB, under the 4 GB cap."}, "label": "ok"}
+{"task": "severity", "id": "severity-3", "split": "cal", "inputs": {"finding": "kai: apt reports 3 upgradable packages, none security."}, "label": "ok"}
+{"task": "severity", "id": "severity-4", "split": "cal", "inputs": {"finding": "kubs0: klams-scanner.timer last ran 02:00, indexed 214 changed files, exit 0."}, "label": "ok"}
+{"task": "severity", "id": "severity-5", "split": "cal", "inputs": {"finding": "kai: AMD-Vi Completion-Wait timeout logged once at boot — known benign firmware quirk, already investigated."}, "label": "ok"}
+{"task": "severity", "id": "severity-6", "split": "cal", "inputs": {"finding": "kubsdb: postgres, mongo and redis containers all healthy; nightly backup completed at 03:12 in 4m."}, "label": "ok"}
+{"task": "severity", "id": "severity-15", "split": "cal", "inputs": {"finding": "kubs0: /sys/firmware/efi/efivars at 82% (pressured); unchanged for 12 days."}, "label": "attention"}
+{"task": "severity", "id": "severity-16", "split": "cal", "inputs": {"finding": "kai: openipmi.service failing (failed/failed) since the last kernel update."}, "label": "attention"}
+{"task": "severity", "id": "severity-17", "split": "cal", "inputs": {"finding": "kubs0: a listener on :8811 has no matching manifest entry and no owning project in korg."}, "label": "attention"}
+{"task": "severity", "id": "severity-18", "split": "cal", "inputs": {"finding": "kai: nvidia-cdi-refresh.service failed after the driver update; containers still start."}, "label": "attention"}
+{"task": "severity", "id": "severity-19", "split": "cal", "inputs": {"finding": "rpi53: NetworkManager-wait-online.service failed at boot; network came up anyway."}, "label": "attention"}
+{"task": "severity", "id": "severity-20", "split": "cal", "inputs": {"finding": "kai: the kcard-backup.service unit failed twice this week, succeeded on retry both times."}, "label": "attention"}
+{"task": "severity", "id": "severity-21", "split": "cal", "inputs": {"finding": "rpi53: SD card write count up 30% this week; card is 3 years old."}, "label": "attention"}
+{"task": "severity", "id": "severity-30", "split": "cal", "inputs": {"finding": "kubs0: GPU fallen off the bus (Xid 79); all CUDA workloads failing."}, "label": "problem"}
+{"task": "severity", "id": "severity-31", "split": "cal", "inputs": {"finding": "kubsdb: postgres container exited 137 (OOM) at 02:14 and has not restarted; korg and klams are down."}, "label": "problem"}
+{"task": "severity", "id": "severity-32", "split": "cal", "inputs": {"finding": "kubsdb: redis is accepting unauthenticated connections from the LAN after a config reset."}, "label": "problem"}
+{"task": "severity", "id": "severity-33", "split": "cal", "inputs": {"finding": "kubsdb: TLS certificate for the korg endpoint expired 3 hours ago; every client is refusing it."}, "label": "problem"}
+{"task": "severity", "id": "severity-34", "split": "cal", "inputs": {"finding": "kubsdb: the ZFS pool is DEGRADED — one of two mirror disks FAULTED."}, "label": "problem"}
+{"task": "severity", "id": "severity-35", "split": "cal", "inputs": {"finding": "kai: global OOM killer fired 4 times in the last hour; sshd was killed once."}, "label": "problem"}
+{"task": "severity", "id": "severity-36", "split": "cal", "inputs": {"finding": "kai: the kvllm server is crash-looping every 20 s for 2 hours, and kmon, kyac and klams-mind all depend on it."}, "label": "problem"}
