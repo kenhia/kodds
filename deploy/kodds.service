@@ -24,6 +24,9 @@ Environment=KODDS_PRIVATE_DIR=%h/.local/share/kodds/private
 # Per-call request log (JSONL, mode 600): state, never in a release.
 Environment=KODDS_CALLS_DIR=%h/.local/share/kodds/calls
 ExecStart=%h/.local/share/kodds/current/.venv/bin/kodds-serve
+# uvicorn bounds its own graceful shutdown (5 s); this is the backstop so a
+# stuck stop never sits out the 90 s default under tailnet traffic (#3248).
+TimeoutStopSec=15
 Restart=on-failure
 RestartSec=20
 

@@ -13,11 +13,14 @@ from test_tasks import spam_model, spam_task
 from kodds.calllog import CallLog
 from kodds.scorer import Scorer
 from kodds.service import (
+    GRACEFUL_SHUTDOWN_S,
+    ROOT,
     BadRequest,
     Service,
     UnknownTask,
     build_mcp,
     create_app,
+    serve,
 )
 from kodds.tasks import Calibration
 
@@ -330,3 +333,27 @@ def test_mcp_classify_carries_the_request_id_and_caller(calls):
     [line] = logged(calls)
     assert data["request_id"] == line["request_id"]
     assert line["caller"] == "kmon"
+
+
+def test_serve_bounds_graceful_shutdown(monkeypatch):
+    # tailscale serve holds keep-alive connections open; an unbounded
+    # graceful shutdown waits on them until systemd's 90 s SIGKILL (#3248).
+    import uvicorn
+
+    seen = {}
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: seen.update(kw))
+    serve(object(), "127.0.0.1", 7780)
+    assert seen == {
+        "host": "127.0.0.1",
+        "port": 7780,
+        "timeout_graceful_shutdown": GRACEFUL_SHUTDOWN_S,
+    }
+    assert GRACEFUL_SHUTDOWN_S <= 10
+
+
+def test_unit_stop_timeout_backstops_the_graceful_shutdown():
+    unit = (ROOT / "deploy" / "kodds.service").read_text().splitlines()
+    [line] = [x for x in unit if x.startswith("TimeoutStopSec=")]
+    stop = int(line.split("=", 1)[1])
+    # Long enough that uvicorn's own timeout fires first, short of the 90 s default.
+    assert GRACEFUL_SHUTDOWN_S < stop < 90

@@ -49,6 +49,10 @@ LOOPBACK = ("127.0.0.1", "localhost", "::1")
 # serve passes the ts.net name through, so it has to be listed.
 DEFAULT_PUBLIC_HOSTS = ("kubs0.encke-wahoo.ts.net",)
 DEFAULT_CALLS_DIR = "~/.local/share/kodds/calls"
+# tailscale serve keeps keep-alive connections to us open, and uvicorn's
+# graceful shutdown would wait on them forever (until systemd's SIGKILL).
+# Bound it; the unit's TimeoutStopSec is the backstop (#3248).
+GRACEFUL_SHUTDOWN_S = 5
 
 RAW_WARNING = (
     "Raw probabilities (calibrated=false) are overconfident: 002 fitted "
@@ -377,6 +381,15 @@ def git_commit(root: Path = ROOT) -> str | None:
         return None
 
 
+def serve(app: Any, host: str, port: int) -> None:
+    """Run ``app`` under uvicorn with a bounded graceful shutdown."""
+    import uvicorn
+
+    uvicorn.run(
+        app, host=host, port=port, timeout_graceful_shutdown=GRACEFUL_SHUTDOWN_S
+    )
+
+
 def fail(message: str) -> NoReturn:
     print(f"kodds: refusing to start: {message}", file=sys.stderr)
     raise SystemExit(1)
@@ -394,7 +407,6 @@ def main() -> None:
     request log goes (default ``~/.local/share/kodds/calls``).
     """
     import llama_cpp
-    import uvicorn
 
     from kodds.llama import load
 
@@ -465,7 +477,7 @@ def main() -> None:
             f"overlay={info['overlay']}",
             file=sys.stderr,
         )
-    uvicorn.run(create_app(service, public_hosts=public_hosts), host=host, port=port)
+    serve(create_app(service, public_hosts=public_hosts), host, port)
 
 
 if __name__ == "__main__":

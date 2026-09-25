@@ -78,11 +78,12 @@ have without kodds. Nothing a consumer does may *depend* on a grade arriving.
 - **A connection error, or an HTTP 502 from `tailscale serve`**: the
   process is not answering. kodds itself never returns a 5xx for a
   well-formed request, so any 5xx comes from the proxy. Every deploy
-  restarts the service. The model loads in about 1–2 s, but **a restart
-  under live tailnet traffic currently shows about 90 s of 502**: the old
-  process waits on the proxy's keep-alive connections until systemd kills
-  it (measured at the 004 deploy, kodds #3248). A refit stops the service
-  on purpose for about 15 minutes (see `route-overlay.md`).
+  restarts the service. The model loads in about 1–2 s, and the old
+  process gives open connections at most 5 s to finish before it cancels
+  them, so **a restart under live tailnet traffic shows under 10 s of 502**.
+  Before 004b it waited on them until systemd killed it, about 90 s (kodds
+  #3248). A refit stops the service on purpose for about 15 minutes (see
+  `route-overlay.md`).
 - **A timeout**: a long queue behind route calls, or a stuck process.
 - `404` means an unknown task. `422` means bad inputs or a bad `caller`.
   `400` means the body was not a JSON object. These are your bug, not
