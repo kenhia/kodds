@@ -30,11 +30,16 @@
 
 ## Next
 
-- **004 — first consumer** (tentative). Wire one real caller: kmon finding
-  severity is the strongest candidate (91% / ECE 0.08 in 001), korg
-  routing if 002 lifts it. A live consumer is also the only source of
-  real labels for severity. Touches the consumer's contract, so it is
-  that project's decision too.
+- **004 — first consumer: kmon severity as a shadow second reader**
+  (program korg:3230, Ken 2026-09-25). kmon grades each day's findings with
+  `severity` and records the grade, the `request_id` and any disagreement
+  with its own status. It changes nothing kmon does: no status change, no
+  wake-ken. Two slices: (1) kodds, korg:3228: a per-call request log and
+  the consumer contract ([docs/consumers.md](../../docs/consumers.md));
+  (2) kmon, korg:3229: the second-reader step. Route is not a consumer yet,
+  at 64.7% top-1 with nothing waiting on it. Gating wake-ken on the grade is
+  a later, separate decision, taken only if the disagreement record earns
+  it. At about 3 findings a week that record takes weeks to months.
 - **005 — fine-tuning** (tentative, gated). A routing LoRA trained on korg
   history, only if 002's prompt work and calibration leave routing short
   of what its consumer needs. Trained on kai's 5090 against the default
