@@ -104,3 +104,45 @@ a korg project added or retired), the eight-step refresh, including
 stopping the service first because two 14Bs don't fit beside TEI, and what
 happens if you skip it. Linked from the README and the deploy skill. The
 klams pointer is written after the doc merges.
+
+## Pre-merge hand run (2026-09-25, 10:55 PDT, from kubs0)
+
+The skill was run once by hand before the ship, as the proposal asked:
+`just overlay-install`, then `just deploy` from branch commit `ab30f46`
+(it warned off-main, as designed). The release synced from the uv cache's
+CUDA wheel, GPU offload was OK, and the service answered `/healthz` in
+under 5 s (the GGUF was in the page cache). **Until Phase 7 redeploys
+merged main, kubs0 serves this branch commit.** No consumer exists yet.
+
+Verified over `https://kubs0.encke-wahoo.ts.net:7780`:
+
+- `/healthz`: Qwen3-14B-Q4_K_M.gguf, `gpu_offload: true`, commit
+  `ab30f46…`. route, severity and triage all `calibrated: true` with
+  `prompt_matches_fit: true`, and route `overlay: true`.
+- `/v1/classify` per task: severity → attention 0.91, triage → phishing
+  0.996, route → krot 0.87 (a klams-token rotation item), all calibrated.
+- MCP: `tools/list` → `list_tasks`, `classify`, `score`, and a
+  `tools/call classify` returned calibrated. kubs0's Claude got a user-scope
+  registration, `kodds → https://kubs0.encke-wahoo.ts.net:7780/mcp`
+  (the ts.net form, not localhost), and `claude mcp list` shows it
+  connected. A headless `claude -p` call to `mcp__kodds__classify` returned
+  the calibrated result.
+- VRAM: 2,883 → 13,402 MiB of 16,376 (kodds 10,514). TEI pids 875202 and
+  875203 were unchanged.
+
+### Latency (`evals/latency.py`, inference time inside the lock, cal items)
+
+| call | median | range |
+|---|---|---|
+| first call after a restart (route, cold) | 5.8 s | — |
+| route, warm (route after route) | 1,454 ms | 1,386–1,495 |
+| severity, warm | 93 ms | 92–96 |
+| triage, warm | 93 ms | 91–94 |
+| **route right after a severity call** | **5,310 ms** | 5,131–5,381 |
+
+Warm numbers match 002's sweeps. **Interleaving costs route 3.7×.** The
+prefix cache keeps only the previous prompt's prefix, so a severity call in
+between makes route re-prefill its ~7k-token project list. Not fixed here,
+as the brief asked: whether it matters depends on a consumer's call mix,
+and none exists yet. It went onto the roadmap's Later/Ideas beside choice
+batching, with the fix named (a saved KV state per task).

@@ -46,6 +46,11 @@
   most of the latency: 46 per-choice evals put p50 at 1.4 s (severity and
   triage, 3 choices, ~95 ms). Do it when a consumer's measured load asks
   for it.
+- Per-task KV state for the resident service. The prefix cache keeps only
+  the previous prompt's prefix, so route called right after severity or
+  triage re-prefills its ~7k-token project list: 5.3 s vs 1.45 s warm
+  (003's measurement). Save and restore a llama.cpp state per task when a
+  consumer's call mix interleaves tasks enough to matter.
 - Mail/notification triage as a consumer (98% on synthetic items).
 - Log-prob caching for repeated prompts, if a consumer repeats them.
 - **Diversion (low priority): Laya bake-off.** Not a planned direction for
