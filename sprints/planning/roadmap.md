@@ -19,15 +19,17 @@
   0.34 → **0.07** (prompt + per-choice bias + T). Severity/triage keep a
   pooled T≈5. See `sprints/002-calibration.md`.
 
+- **003 — service + MCP.** One process on kubs0 with the 14B resident
+  (10.5 GiB beside TEI) serves the tasks over HTTP (`/v1/classify`,
+  `/v1/score`, `/healthz`) and MCP (`/mcp`) at
+  `https://kubs0.encke-wahoo.ts.net:7780`. Every result carries
+  `calibrated`. Deployed from merged main by the `deploy-kodds` skill
+  (release dirs, `current`/`previous`). Route's overlay is pinned in a
+  state dir (`docs/route-overlay.md`). Warm latency: 93 ms
+  severity/triage, 1.45 s route. See `sprints/003-service-and-mcp.md`.
+
 ## Next
 
-- **003 — service + MCP.** HTTP API (task or prompt + choices →
-  probabilities) as a systemd user service on kubs0, tailnet-served, with
-  the model kept resident; an MCP surface over it so agents call it
-  directly. Calibrated tasks from 002 are what makes the API worth calling.
-  The serving host must generate route's private overlay
-  (`evals/build_evalset.py overlay`, needs korg), or route serves raw
-  probabilities; surface `calibrated` in the API rather than hiding it.
 - **004 — first consumer** (tentative). Wire one real caller: kmon finding
   severity is the strongest candidate (91% / ECE 0.08 in 001), korg
   routing if 002 lifts it. A live consumer is also the only source of
