@@ -178,6 +178,19 @@ def test_private_overlay_replaces_descriptions(tmp_path):
         load_task(tmp_path / "spam.toml")
 
 
+def test_overlay_can_live_outside_the_task_dir(tmp_path):
+    # The service keeps overlays in a state dir that outlives each release.
+    (tmp_path / "spam.toml").write_text(
+        'name = "spam"\ntemplate = "{choice_list}"\n[choices]\nspam = "junk"\n'
+    )
+    state = tmp_path / "state"
+    state.mkdir()
+    (state / "spam.json").write_text(json.dumps({"descriptions": {"spam": "WIN"}}))
+    assert load_task(tmp_path / "spam.toml").descriptions["spam"] == "junk"
+    tasks = load_tasks(tmp_path, private_dir=state)
+    assert tasks["spam"].descriptions["spam"] == "WIN"
+
+
 def test_repo_tasks_load_and_render():
     tasks = load_tasks()
     assert {"route", "severity", "triage"} <= set(tasks)

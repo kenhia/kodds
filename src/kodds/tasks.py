@@ -159,11 +159,14 @@ class Task:
         return value[:cap] + "…" if cap is not None and len(value) > cap else value
 
 
-def load_task(path: str | Path, *, overlay: bool = True) -> Task:
+def load_task(
+    path: str | Path, *, overlay: bool = True, private_dir: str | Path | None = None
+) -> Task:
     """A task from its TOML, with fitted params from a sibling ``.calibration.json``.
 
-    With ``overlay``, choice descriptions in ``private/<name>.json`` beside it
-    (when present) replace the TOML's.
+    With ``overlay``, choice descriptions in ``<private_dir>/<name>.json``
+    (default: ``private/`` beside the TOML), when present, replace the TOML's.
+    The service points ``private_dir`` at a state dir outside the release.
     """
     path = Path(path)
     spec = tomllib.loads(path.read_text())
@@ -172,7 +175,7 @@ def load_task(path: str | Path, *, overlay: bool = True) -> Task:
         names, descriptions = tuple(choices), dict(choices)
     else:
         names, descriptions = tuple(choices), {}
-    private = path.parent / "private" / f"{path.stem}.json"
+    private = overlay_path(path, private_dir)
     if overlay and private.exists():
         extra = json.loads(private.read_text())["descriptions"]
         unknown = set(extra) - set(names)
@@ -192,11 +195,20 @@ def load_task(path: str | Path, *, overlay: bool = True) -> Task:
     )
 
 
+def overlay_path(path: str | Path, private_dir: str | Path | None = None) -> Path:
+    """Where the private overlay for the task defined at ``path`` lives."""
+    path = Path(path)
+    return Path(private_dir or path.parent / "private") / f"{path.stem}.json"
+
+
 def load_tasks(
-    directory: str | Path = TASKS_DIR, *, overlay: bool = True
+    directory: str | Path = TASKS_DIR,
+    *,
+    overlay: bool = True,
+    private_dir: str | Path | None = None,
 ) -> dict[str, Task]:
     paths = sorted(Path(directory).glob("*.toml"))
-    tasks = (load_task(p, overlay=overlay) for p in paths)
+    tasks = (load_task(p, overlay=overlay, private_dir=private_dir) for p in paths)
     return {t.name: t for t in tasks}
 
 

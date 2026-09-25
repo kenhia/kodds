@@ -48,3 +48,20 @@
   for it.
 - Mail/notification triage as a consumer (98% on synthetic items).
 - Log-prob caching for repeated prompts, if a consumer repeats them.
+- **Diversion (low priority): Laya bake-off.** Not a planned direction for
+  kodds, just a comparison that might be interesting.
+  [Laya](https://brainfunctioncollapse.com/laya/about)
+  ([repo](https://github.com/NandhaKishorM/laya),
+  [weights](https://huggingface.co/convaiinnovations/laya), Apache-2.0) is a
+  421M ModernBERT-large encoder with a decision head. It scores each option
+  at its own `[MASK]` slot and returns probabilities, with no generation.
+  Its authors claim ~35 ms per question on a T4, and ECE 0.081 after a
+  per-question-type temperature refit. They also report it ships
+  over-confident and is near chance zero-shot (0.36) until fine-tuned
+  (0.766). It fits easily on kubs0: ~1–2 GB beside TEI, and it can also run
+  on CPU. It doesn't suit route as it stands. Its context is 512 tokens
+  (1,024 for the multilingual checkpoint), and route's prompt is ~7.3k
+  tokens over 46 options. If picked up: add a Laya backend and run
+  severity/triage on the existing cal/test splits, then maybe one
+  fine-tune on route's train split against a shortlist. Compare accuracy,
+  Brier/ECE and latency with the 14B.

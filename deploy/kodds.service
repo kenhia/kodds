@@ -1,0 +1,29 @@
+# kodds: local LLM classifier (HTTP + MCP) with the model resident on the GPU.
+# Source of truth for the user unit on kubs0; `just deploy` installs it to
+# ~/.config/systemd/user/ and runs whatever release `current` points at.
+# Never point this at ~/src/ai/kodds: a sprint branch checked out there would
+# become live on the next restart.
+
+[Unit]
+Description=kodds classifier service (Qwen3-14B resident, :7780)
+Documentation=https://github.com/kenhia/kodds
+After=network-online.target
+# A refusal to start (CPU build, too little VRAM) exits 1; don't retry forever.
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.local/share/kodds/current
+Environment=KODDS_MODEL=%h/models/gguf/Qwen3-14B-Q4_K_M.gguf
+Environment=KODDS_N_CTX=8192
+Environment=KODDS_HOST=127.0.0.1
+Environment=KODDS_PORT=7780
+# The pinned route overlay lives outside the releases (docs/route-overlay.md).
+Environment=KODDS_PRIVATE_DIR=%h/.local/share/kodds/private
+ExecStart=%h/.local/share/kodds/current/.venv/bin/kodds-serve
+Restart=on-failure
+RestartSec=20
+
+[Install]
+WantedBy=default.target

@@ -8,8 +8,14 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "llama-cpp-python>=0.3.35",
+    "mcp>=2.2.0",
     "numpy>=2.5.3",
+    "starlette>=1.7.0",
+    "uvicorn>=0.54.0",
 ]
+
+[project.scripts]
+kodds-serve = "kodds.service:main"
 
 [build-system]
 requires = ["uv_build>=0.10.9,<0.11.0"]
@@ -27,3 +33,8 @@ dev = [
 # Run them with `just test-gpu` (needs KODDS_MODEL pointing at a GGUF).
 markers = ["gpu: needs a CUDA GPU and downloaded weights (KODDS_MODEL)"]
 addopts = "-m 'not gpu'"
+
+[tool.uv.extra-build-variables]
+# A CPU build of llama.cpp "works" at ~100x the latency; the service refuses
+# to start on one. Declared here so every `uv sync` builds it with CUDA.
+llama-cpp-python = { CMAKE_ARGS = "-DGGML_CUDA=on" }
