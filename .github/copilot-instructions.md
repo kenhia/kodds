@@ -62,8 +62,12 @@ logits (the "Jev" idea — see
 <https://www.nobodywho.ai/posts/jev-in-25-lines/>, a parody that proves the
 point). One forward pass per choice set, no generation, no API calls.
 
-**Status:** fresh scaffold (2026-09-24). Only the log-space normalisation
-helper exists; sprint 001 builds the scoring core and picks a model.
+**Status:** live service (sprint 003, 2026-09-25). Qwen3-14B Q4_K_M is
+resident on kubs0, serving calibrated tasks (route, severity, triage) over
+HTTP and MCP at `https://kubs0.encke-wahoo.ts.net:7780`. It is deployed by
+`just deploy` / the `deploy-kodds` skill, never from this checkout. A sweep
+or GPU test needs `systemctl --user stop kodds` first: two 14Bs don't fit
+beside TEI.
 
 - **Stack:** Python via `uv`; `llama-cpp-python` built with CUDA; GGUF
   models from Hugging Face.

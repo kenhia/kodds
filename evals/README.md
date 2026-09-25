@@ -10,6 +10,7 @@ Labelled data and the scripts that measure kodds against it.
 | `evaldata.py` | `load(task, split)` for the scripts below |
 | `sweep.py` | scores one task's split under prompt variants; dumps log-probs |
 | `calibrate.py` | compares calibration methods (fit on `cal`, report on `test`) and writes `tasks/*.calibration.json` |
+| `latency.py` | a running service's per-task latency: warm, and route interleaved with severity |
 | `bakeoff.py`, `report.py`, `evalset.jsonl`, `results/` | sprint 001's model bake-off and its frozen 154-item set |
 
 Splits: `cal` fits calibration and chooses prompts; `test` only reports;

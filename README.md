@@ -46,10 +46,39 @@ live in a git-ignored overlay (`evals/build_evalset.py overlay`); without
 the overlay, `route` runs uncalibrated. See sprint 002 and
 [`evals/README.md`](evals/README.md).
 
-`llama-cpp-python` must be built with CUDA or it runs on the CPU:
-`CMAKE_ARGS="-DGGML_CUDA=on" uv sync --reinstall-package llama-cpp-python`.
-`just models` downloads the candidate GGUFs to `~/models/gguf`; `just
-bakeoff` re-runs the model comparison.
+`llama-cpp-python` must be built with CUDA or it runs on the CPU. The build
+is declared in `pyproject.toml` (`[tool.uv.extra-build-variables]`), and
+`just setup` syncs and checks GPU offload. CMake needs `nvcc`, which the
+justfile puts on `PATH`. `just models` downloads the candidate GGUFs to
+`~/models/gguf`; `just bakeoff` re-runs the model comparison.
+
+## Service
+
+On kubs0, kodds runs as one process with the 14B resident, and serves the
+tasks over HTTP and MCP at `https://kubs0.encke-wahoo.ts.net:7780`
+(tailnet-only, no token):
+
+| endpoint | what |
+|---|---|
+| `GET /healthz` | model, GPU offload, VRAM, commit, per-task `calibrated` |
+| `GET /v1/tasks` | each task's inputs, choices and `calibrated` |
+| `POST /v1/classify` `{task, inputs}` | `{probs, raw, calibrated, model, top, latency_ms, queued_ms}` |
+| `POST /v1/score` `{prompt, choices, system?}` | raw probabilities, `calibrated: false` always |
+| `/mcp` | streamable-HTTP MCP: `list_tasks`, `classify`, `score` |
+
+```sh
+curl -s https://kubs0.encke-wahoo.ts.net:7780/v1/classify \
+  -H 'content-type: application/json' \
+  -d '{"task":"severity","inputs":{"finding":"kubsdb: root fs at 97%"}}'
+```
+
+Threshold only on `calibrated: true` results; raw probabilities are
+overconfident. Inference is serialised (llama.cpp is not re-entrant), so
+concurrent callers queue (`queued_ms`). Deployed by `just deploy` via the
+[`deploy-kodds`](.claude/skills/deploy-kodds/SKILL.md) skill. Route's
+calibration is pinned to a private overlay:
+[docs/route-overlay.md](docs/route-overlay.md) covers what to do when route
+reports `calibrated: false`.
 
 ## Development
 
