@@ -153,3 +153,28 @@ batching, with the fix named (a saved KV state per task).
   (#3207 asked for it). It surfaced a real gap: CMake finds no `nvcc` in a
   non-interactive shell, so the justfile exports `/usr/local/cuda/bin` on
   PATH. Gate: `just setup` asserts GPU offload, and so does `just deploy`.
+
+## Deployed
+
+**2026-09-25 11:01 PDT, kubs0**, by sprint-ship Phase 7 via the
+`deploy-kodds` skill (`just deploy` from merged main `2ff76d6`, PR #3).
+Everything below was run and probed from kubs0 itself.
+
+- Release `~/.local/share/kodds/releases/2ff76d6…`. The venv synced from
+  the uv cache's CUDA wheel, GPU offload was OK, and healthz answered in
+  5 s. `current` points at 2ff76d6, and `previous` at the pre-merge hand
+  run's `ab30f46` (the rollback target). `kodds.service` is active and
+  enabled.
+- `/healthz` over `https://kubs0.encke-wahoo.ts.net:7780`: model
+  Qwen3-14B-Q4_K_M.gguf, `gpu_offload: true`, **commit `2ff76d6…` = merged
+  main**. route, severity and triage all `calibrated: true` and
+  `prompt_matches_fit: true`. The route overlay is present in the state dir.
+- `/v1/classify` over the tailnet: severity → attention 0.91 (201 ms),
+  triage → phishing 0.996 (96 ms), route → krot 0.87 (5.4 s, cold after
+  the restart). All calibrated.
+- MCP over the tailnet: `tools/list` → `list_tasks`, `classify`, `score`.
+  `tools/call classify` → calibrated, no error. `claude mcp list` shows
+  `kodds` ✔ Connected.
+- VRAM: 13,408 MiB before (the branch kodds + TEI) → 13,402 after (kodds
+  10,514) of 16,376. TEI pids 875202 and 875203 were unchanged through
+  both deploys.
