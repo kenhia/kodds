@@ -21,6 +21,8 @@ Environment=KODDS_HOST=127.0.0.1
 Environment=KODDS_PORT=7780
 # The pinned route overlay lives outside the releases (docs/route-overlay.md).
 Environment=KODDS_PRIVATE_DIR=%h/.local/share/kodds/private
+# Per-call request log (JSONL, mode 600): state, never in a release.
+Environment=KODDS_CALLS_DIR=%h/.local/share/kodds/calls
 ExecStart=%h/.local/share/kodds/current/.venv/bin/kodds-serve
 Restart=on-failure
 RestartSec=20

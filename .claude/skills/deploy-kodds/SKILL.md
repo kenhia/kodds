@@ -14,6 +14,7 @@ klams' two `text-embeddings-router` (TEI) processes. It serves HTTP
 |---|---|
 | releases | `~/.local/share/kodds/releases/<sha>/` (a `git archive` + its own `.venv`) |
 | live / rollback | `~/.local/share/kodds/current`, `previous` (symlinks) |
+| per-call request log | `~/.local/share/kodds/calls/<YYYY-MM>.jsonl` (mode 600; state, survives deploys) |
 | route's pinned overlay | `~/.local/share/kodds/private/route.json` ([docs/route-overlay.md](../../../docs/route-overlay.md)) |
 | unit | `~/.config/systemd/user/kodds.service`, installed from `deploy/kodds.service` |
 | model | `~/models/gguf/Qwen3-14B-Q4_K_M.gguf` (not in any release) |
@@ -87,6 +88,16 @@ curl -fsS $U/v1/classify -H 'content-type: application/json' \
 ```
 
 Check each result for `calibrated: true` and `model: Qwen3-14B-Q4_K_M.gguf`.
+Each classify also returns a `request_id`. Confirm the last one landed in the
+call log, and that healthz's `call_log.writable` is true:
+
+```sh
+tail -n 1 ~/.local/share/kodds/calls/$(date -u +%Y-%m).jsonl | python3 -m json.tool | grep request_id
+stat -c '%a %n' ~/.local/share/kodds/calls ~/.local/share/kodds/calls/*.jsonl   # 700, 600
+```
+
+Verification calls are logged like any other (with no `caller`), which is
+fine: the log is for joining ids a consumer kept, and nobody keeps these.
 Take `inputs` names from `GET /v1/tasks` if the ones above ever drift.
 
 MCP over the same URL (streamable HTTP, stateless, JSON responses):

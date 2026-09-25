@@ -1,3 +1,5 @@
+import json
+import stat
 import threading
 import time
 
@@ -8,6 +10,7 @@ from starlette.testclient import TestClient
 from test_scorer import plain
 from test_tasks import spam_model, spam_task
 
+from kodds.calllog import CallLog
 from kodds.scorer import Scorer
 from kodds.service import (
     BadRequest,
@@ -35,9 +38,23 @@ def service(**kw) -> Service:
 
 
 @pytest.fixture
-def client():
-    with TestClient(create_app(service())) as c:
+def calls(tmp_path):
+    return CallLog(tmp_path / "calls")
+
+
+@pytest.fixture
+def client(calls):
+    with TestClient(create_app(service(calls=calls))) as c:
         yield c
+
+
+def logged(calls: CallLog) -> list[dict]:
+    path = calls.path()
+    return (
+        [json.loads(ln) for ln in path.read_text().splitlines()]
+        if path.exists()
+        else []
+    )
 
 
 def test_classify_returns_calibrated_probs_and_raw(client):
@@ -219,3 +236,97 @@ def test_mcp_unknown_task_is_a_tool_error():
             return await c.call_tool("classify", {"task": "nope", "inputs": {}})
 
     assert anyio.run(run).is_error
+
+
+def test_classify_logs_one_line_with_the_request_id(client, calls):
+    r = client.post(
+        "/v1/classify",
+        json={"task": "spam", "inputs": {"message": ""}, "caller": "kmon"},
+    )
+    body = r.json()
+    assert len(body["request_id"]) == 26
+    [line] = logged(calls)
+    assert line["request_id"] == body["request_id"]
+    assert line["caller"] == "kmon"
+    assert line["task"] == "spam" and line["inputs"] == {"message": ""}
+    assert line["probs"] == body["probs"] and line["top"] == body["top"]
+    assert line["calibrated"] is True and line["model"] == MODEL
+    assert line["prompt_sha256"] == client.get("/v1/tasks").json()[0]["prompt_sha256"]
+    assert {"ts", "latency_ms", "raw"} <= set(line)
+    assert stat.S_IMODE(calls.path().stat().st_mode) == 0o600
+    assert stat.S_IMODE(calls.directory.stat().st_mode) == 0o700
+
+
+def test_request_ids_are_distinct_and_caller_is_optional(client, calls):
+    ids = {
+        client.post(
+            "/v1/classify", json={"task": "raw", "inputs": {"message": ""}}
+        ).json()["request_id"]
+        for _ in range(3)
+    }
+    assert len(ids) == 3
+    lines = logged(calls)
+    assert len(lines) == 3 and all(ln["caller"] is None for ln in lines)
+
+
+def test_caller_header_is_used_when_the_body_has_none(client, calls):
+    client.post(
+        "/v1/classify",
+        json={"task": "spam", "inputs": {"message": ""}},
+        headers={"X-Homelab-Agent": "claude-kubs0"},
+    )
+    client.post(
+        "/v1/classify",
+        json={"task": "spam", "inputs": {"message": ""}, "caller": "kmon"},
+        headers={"X-Homelab-Agent": "claude-kubs0"},
+    )
+    assert [ln["caller"] for ln in logged(calls)] == ["claude-kubs0", "kmon"]
+
+
+@pytest.mark.parametrize("caller", [3, "", "x" * 65])
+def test_bad_caller_is_422(client, calls, caller):
+    r = client.post(
+        "/v1/classify",
+        json={"task": "spam", "inputs": {"message": ""}, "caller": caller},
+    )
+    assert r.status_code == 422
+    assert logged(calls) == []
+
+
+def test_errors_and_score_are_not_logged(client, calls):
+    client.post("/v1/classify", json={"task": "nope", "inputs": {}})
+    client.post("/v1/score", json={"prompt": ":", "choices": ["spam", "ham"]})
+    assert logged(calls) == []
+
+
+def test_a_failing_log_never_fails_the_call(tmp_path, capsys):
+    blocker = tmp_path / "file"
+    blocker.write_text("")
+    svc = service(calls=CallLog(blocker / "calls"))  # parent is a file
+    assert svc.calls and not svc.calls.status()["writable"]
+    with TestClient(create_app(svc)) as c:
+        for _ in range(2):
+            r = c.post("/v1/classify", json={"task": "spam", "inputs": {"message": ""}})
+            assert r.status_code == 200 and r.json()["request_id"]
+        assert c.get("/healthz").json()["call_log"]["writable"] is False
+    # Warned once, not once per call.
+    assert capsys.readouterr().err.count("call log write") == 1
+
+
+def test_healthz_reports_the_call_log(client, calls):
+    log = client.get("/healthz").json()["call_log"]
+    assert log == {"path": str(calls.path()), "writable": True}
+
+
+def test_mcp_classify_carries_the_request_id_and_caller(calls):
+    async def run():
+        async with Client(build_mcp(service(calls=calls))) as c:
+            return await c.call_tool(
+                "classify",
+                {"task": "spam", "inputs": {"message": ""}, "caller": "kmon"},
+            )
+
+    data = anyio.run(run).structured_content
+    [line] = logged(calls)
+    assert data["request_id"] == line["request_id"]
+    assert line["caller"] == "kmon"

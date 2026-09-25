@@ -26,6 +26,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -37,6 +38,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from kodds.calllog import CallLog, ulid
 from kodds.scorer import Scorer
 from kodds.tasks import TASKS_DIR, Task, load_tasks, overlay_path
 
@@ -46,12 +48,17 @@ LOOPBACK = ("127.0.0.1", "localhost", "::1")
 # Host headers the MCP transport accepts (DNS-rebinding protection). tailscale
 # serve passes the ts.net name through, so it has to be listed.
 DEFAULT_PUBLIC_HOSTS = ("kubs0.encke-wahoo.ts.net",)
+DEFAULT_CALLS_DIR = "~/.local/share/kodds/calls"
 
 RAW_WARNING = (
     "Raw probabilities (calibrated=false) are overconfident: 002 fitted "
     "temperatures of about 5 for severity/triage. Threshold only on results "
     "with calibrated=true."
 )
+
+
+CALLER_MAX = 64
+CALLER_HEADER = "X-Homelab-Agent"
 
 
 class UnknownTask(KeyError):
@@ -73,6 +80,7 @@ class Service:
     private_dir: Path | None = None
     gpu_offload: bool | None = None
     vram: Callable[[], dict[str, int] | None] = lambda: None
+    calls: CallLog | None = None
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def task(self, name: str) -> Task:
@@ -98,8 +106,15 @@ class Service:
     def list_tasks(self) -> list[dict[str, Any]]:
         return [self.task_info(t) for t in self.tasks.values()]
 
-    def classify(self, task: str, inputs: Mapping[str, Any]) -> dict[str, Any]:
+    def classify(
+        self, task: str, inputs: Mapping[str, Any], caller: str | None = None
+    ) -> dict[str, Any]:
+        """Classify, stamp a ``request_id`` and log the call (see ``kodds.calllog``)."""
         t = self.task(task)
+        if caller is not None and (
+            not isinstance(caller, str) or not caller or len(caller) > CALLER_MAX
+        ):
+            raise BadRequest(f"caller must be a string of 1-{CALLER_MAX} characters")
         if not isinstance(inputs, Mapping) or not all(
             isinstance(k, str) and isinstance(v, str) for k, v in inputs.items()
         ):
@@ -113,13 +128,35 @@ class Service:
                 f"missing {missing}, unknown {extra}"
             )
         result, timing = self._run(lambda: t.classify(self.scorer, **inputs))
+        request_id = ulid()
+        top = max(result.probs, key=result.probs.__getitem__)
+        if self.calls is not None:
+            # `raw` rides along so a later refit can use shadow-run data
+            # without re-scoring; it costs a few dozen bytes a line.
+            self.calls.append(
+                {
+                    "ts": datetime.now(UTC).isoformat(timespec="milliseconds"),
+                    "request_id": request_id,
+                    "task": t.name,
+                    "inputs": dict(inputs),
+                    "probs": result.probs,
+                    "raw": result.raw,
+                    "top": top,
+                    "calibrated": result.calibrated,
+                    "model": result.model,
+                    "prompt_sha256": t.prompt_hash(),
+                    "latency_ms": timing["latency_ms"],
+                    "caller": caller,
+                }
+            )
         return {
+            "request_id": request_id,
             "task": t.name,
             "probs": result.probs,
             "raw": result.raw,
             "calibrated": result.calibrated,
             "model": result.model,
-            "top": max(result.probs, key=result.probs.__getitem__),
+            "top": top,
             **timing,
         }
 
@@ -161,6 +198,7 @@ class Service:
             "vram_mib": self.vram(),
             "commit": self.commit,
             "private_dir": str(self.private_dir) if self.private_dir else None,
+            "call_log": self.calls.status() if self.calls else None,
             "tasks": {t["name"]: t for t in self.list_tasks()},
         }
 
@@ -202,11 +240,15 @@ def build_mcp(service: Service) -> MCPServer:
         description="Classify with a named task (see list_tasks): probabilities "
         "over its fixed choices, with `top` the most likely. `probs` is "
         "calibrated when `calibrated` is true and otherwise equals `raw`. "
-        + RAW_WARNING,
+        "Pass `caller` (your agent or service name); keep the returned "
+        "`request_id` beside whatever you file, so the grade can be joined to "
+        "its outcome later. " + RAW_WARNING,
         annotations=read_only,
     )
-    async def classify(task: str, inputs: dict[str, str]) -> dict[str, Any]:
-        return await anyio.to_thread.run_sync(service.classify, task, inputs)
+    async def classify(
+        task: str, inputs: dict[str, str], caller: str | None = None
+    ) -> dict[str, Any]:
+        return await anyio.to_thread.run_sync(service.classify, task, inputs, caller)
 
     @mcp.tool(
         description="Probability of each choice as the answer to `prompt`, "
@@ -265,8 +307,9 @@ def create_app(
             return error(400, str(e))
         if not isinstance(data.get("task"), str):
             return error(422, "task (string) is required")
+        caller = data.get("caller", request.headers.get(CALLER_HEADER))
         return await call(
-            lambda: service.classify(data["task"], data.get("inputs", {}))
+            lambda: service.classify(data["task"], data.get("inputs", {}), caller)
         )
 
     @mcp.custom_route("/v1/score", methods=["POST"])
@@ -347,7 +390,8 @@ def main() -> None:
     ``KODDS_PRIVATE_DIR`` where task overlays live (default ``tasks/private``);
     ``KODDS_MIN_FREE_MIB`` VRAM that must be free before loading (11000);
     ``KODDS_PUBLIC_HOSTS`` comma-separated Host names MCP accepts besides
-    loopback (the kubs0 ts.net name).
+    loopback (the kubs0 ts.net name); ``KODDS_CALLS_DIR`` where the per-call
+    request log goes (default ``~/.local/share/kodds/calls``).
     """
     import llama_cpp
     import uvicorn
@@ -367,6 +411,7 @@ def main() -> None:
     n_ctx = int(env.get("KODDS_N_CTX", 8192))
     private = env.get("KODDS_PRIVATE_DIR")
     private_dir = Path(private).expanduser() if private else None
+    calls_dir = Path(env.get("KODDS_CALLS_DIR", DEFAULT_CALLS_DIR)).expanduser()
     public_hosts = [
         h.strip()
         for h in env.get("KODDS_PUBLIC_HOSTS", ",".join(DEFAULT_PUBLIC_HOSTS)).split(
@@ -401,12 +446,19 @@ def main() -> None:
         private_dir=private_dir,
         gpu_offload=True,
         vram=free_vram_mib,
+        calls=CallLog(calls_dir),
     )
     print(
         f"kodds: {scorer.model} loaded in {time.perf_counter() - t0:.1f}s "
         f"(n_ctx {n_ctx}), commit {service.commit}",
         file=sys.stderr,
     )
+    log = service.calls.status() if service.calls else None
+    if log:
+        print(
+            f"kodds: call log {log['path']} writable={log['writable']}",
+            file=sys.stderr,
+        )
     for info in service.list_tasks():
         print(
             f"kodds: task {info['name']}: calibrated={info['calibrated']} "
