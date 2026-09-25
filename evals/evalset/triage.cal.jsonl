@@ -1,0 +1,21 @@
+{"task": "triage", "id": "triage-0", "split": "cal", "inputs": {"message": "From: Cloudflare <noreply@notify.cloudflare.com> — Your domain renewal for example-home.net completed."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-1", "split": "cal", "inputs": {"message": "From: City Water Utility — Your September statement is available: $48.20, autopay on the 15th."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-2", "split": "cal", "inputs": {"message": "From: Costco Photo — Your prints are ready for pickup at store #0411."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-3", "split": "cal", "inputs": {"message": "From: PyPI <noreply@pypi.org> — New login to your account from Seattle, WA using a security key."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-4", "split": "cal", "inputs": {"message": "From: Ubuntu Security <security@ubuntu.com> — USN-7712-1: OpenSSL vulnerabilities, update packages."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-5", "split": "cal", "inputs": {"message": "From: Jen (neighbour) — Your package ended up on our porch, I'll drop it over tonight."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-6", "split": "cal", "inputs": {"message": "From: Tailscale <billing@tailscale.com> — Your receipt for September. Personal plan, $0.00."}, "label": "legitimate"}
+{"task": "triage", "id": "triage-15", "split": "cal", "inputs": {"message": "From: Global Traders <offer@b2b-leads.cn> — Wholesale LED strips, MOQ 10,000, factory price."}, "label": "spam"}
+{"task": "triage", "id": "triage-16", "split": "cal", "inputs": {"message": "From: Lucky Winner Notice — Congratulations, you have been selected for a survey reward. Claim your gift card!"}, "label": "spam"}
+{"task": "triage", "id": "triage-17", "split": "cal", "inputs": {"message": "From: Crypto Signals VIP — Our members made 4,000% last month. Join the Telegram group now."}, "label": "spam"}
+{"task": "triage", "id": "triage-18", "split": "cal", "inputs": {"message": "From: Solar Savings Team — Homeowners in your ZIP are getting FREE solar panels. See if you qualify."}, "label": "spam"}
+{"task": "triage", "id": "triage-19", "split": "cal", "inputs": {"message": "From: Web Design Agency — Hi, I can redesign your website at an affordable price. Interested?"}, "label": "spam"}
+{"task": "triage", "id": "triage-20", "split": "cal", "inputs": {"message": "From: Casino Royale Online — Your 200 free spins are waiting. Bet now!"}, "label": "spam"}
+{"task": "triage", "id": "triage-21", "split": "cal", "inputs": {"message": "From: Dr. Slim <info@fastketo-pills.info> — Lose 30 lbs in 30 days with no diet. Order today."}, "label": "spam"}
+{"task": "triage", "id": "triage-30", "split": "cal", "inputs": {"message": "From: DocuSign <dse@docusign-review.co> — Ken, you have a document to review and sign: Invoice_4471.html"}, "label": "phishing"}
+{"task": "triage", "id": "triage-31", "split": "cal", "inputs": {"message": "From: Cloudflare <billing@cloudf1are.com> — Your domain will be deleted tomorrow. Renew now with the attached payment form."}, "label": "phishing"}
+{"task": "triage", "id": "triage-32", "split": "cal", "inputs": {"message": "From: Amazon <account-update@amazon-billing-help.com> — Your order was cancelled due to a payment failure. Update your billing information."}, "label": "phishing"}
+{"task": "triage", "id": "triage-33", "split": "cal", "inputs": {"message": "From: PayPal <service@paypa1-support.com> — Your account has been limited. Log in here to restore access and confirm your card details."}, "label": "phishing"}
+{"task": "triage", "id": "triage-34", "split": "cal", "inputs": {"message": "From: IT Helpdesk — Your password expires today. Reply with your current password to keep it active."}, "label": "phishing"}
+{"task": "triage", "id": "triage-35", "split": "cal", "inputs": {"message": "From: Hugging Face <no-reply@hf-tokens.support> — Your access token was leaked. Paste it here so we can revoke it."}, "label": "phishing"}
+{"task": "triage", "id": "triage-36", "split": "cal", "inputs": {"message": "From: Microsoft 365 Admin — Your mailbox is 99% full. Sign in at the link below to keep receiving mail."}, "label": "phishing"}

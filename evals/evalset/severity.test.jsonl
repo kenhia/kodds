@@ -1,0 +1,24 @@
+{"task": "severity", "id": "severity-7", "split": "test", "inputs": {"finding": "kubs0: GPU at 18% memory (2.9 GB), two text-embeddings-router processes, both expected."}, "label": "ok"}
+{"task": "severity", "id": "severity-8", "split": "test", "inputs": {"finding": "rpi53: CPU temperature 52°C, steady across the day."}, "label": "ok"}
+{"task": "severity", "id": "severity-9", "split": "test", "inputs": {"finding": "kubs0: root filesystem at 41% used, up from 40% yesterday."}, "label": "ok"}
+{"task": "severity", "id": "severity-10", "split": "test", "inputs": {"finding": "kai: kmon.timer fired at 05:30 and the report was filed."}, "label": "ok"}
+{"task": "severity", "id": "severity-11", "split": "test", "inputs": {"finding": "rpi53: kpidash.service restarted once at 04:00 by its scheduled timer, as configured."}, "label": "ok"}
+{"task": "severity", "id": "severity-12", "split": "test", "inputs": {"finding": "kai: tailscale up, all 9 peers reachable, latency under 3 ms."}, "label": "ok"}
+{"task": "severity", "id": "severity-13", "split": "test", "inputs": {"finding": "kai: all 142 systemd units active; no failed units; load average 0.8 on 32 cores."}, "label": "ok"}
+{"task": "severity", "id": "severity-14", "split": "test", "inputs": {"finding": "kubsdb: disk SMART attributes unchanged; 0 reallocated sectors."}, "label": "ok"}
+{"task": "severity", "id": "severity-22", "split": "test", "inputs": {"finding": "kubs0: kaed binary on disk is 0.4.1 but the package store's current release is 0.5.0."}, "label": "attention"}
+{"task": "severity", "id": "severity-23", "split": "test", "inputs": {"finding": "kubsdb: root filesystem at 78%, up 6 points in a week; at this rate full in about four weeks."}, "label": "attention"}
+{"task": "severity", "id": "severity-24", "split": "test", "inputs": {"finding": "kai: run-u558.service failed (failed/failed) — a transient unit, origin unknown from the bundle."}, "label": "attention"}
+{"task": "severity", "id": "severity-25", "split": "test", "inputs": {"finding": "kubsdb: redis reports 2 rejected connections with a stale password from rpi53."}, "label": "attention"}
+{"task": "severity", "id": "severity-26", "split": "test", "inputs": {"finding": "kai: a user unit kdeskdash-claude-poll.timer is running but absent from the k-homelab manifest."}, "label": "attention"}
+{"task": "severity", "id": "severity-27", "split": "test", "inputs": {"finding": "kai: a Docker image 58 GB in size appeared under /var/lib/docker on the root volume, not the AI volume."}, "label": "attention"}
+{"task": "severity", "id": "severity-28", "split": "test", "inputs": {"finding": "kubsdb: nightly-backup.service took 47 minutes, up from a usual 4; completed successfully."}, "label": "attention"}
+{"task": "severity", "id": "severity-29", "split": "test", "inputs": {"finding": "kai: 212 apt packages upgradable including 14 security updates, pending for 9 days."}, "label": "attention"}
+{"task": "severity", "id": "severity-37", "split": "test", "inputs": {"finding": "rpi53: unreachable on tailscale and LAN for 6 hours; last seen with CPU at 85°C."}, "label": "problem"}
+{"task": "severity", "id": "severity-38", "split": "test", "inputs": {"finding": "kai: a process listening on 0.0.0.0:4444 owned by an unknown user 'svc_tmp' created today."}, "label": "problem"}
+{"task": "severity", "id": "severity-39", "split": "test", "inputs": {"finding": "kai: root filesystem at 99% used, 1.2 GB free, growing 3 GB/hour."}, "label": "problem"}
+{"task": "severity", "id": "severity-40", "split": "test", "inputs": {"finding": "kubs0: /home volume remounted read-only after ext4 errors."}, "label": "problem"}
+{"task": "severity", "id": "severity-41", "split": "test", "inputs": {"finding": "kubs0: klams service unreachable for 3 hours; health endpoint times out."}, "label": "problem"}
+{"task": "severity", "id": "severity-42", "split": "test", "inputs": {"finding": "kai: sshd config changed overnight to PermitRootLogin yes and PasswordAuthentication yes; no matching work item."}, "label": "problem"}
+{"task": "severity", "id": "severity-43", "split": "test", "inputs": {"finding": "kubsdb: SMART reports 1,204 reallocated sectors, up from 0 yesterday; pending sectors 88."}, "label": "problem"}
+{"task": "severity", "id": "severity-44", "split": "test", "inputs": {"finding": "kubs0: nightly backups have failed for 5 consecutive days; last good backup is 6 days old."}, "label": "problem"}

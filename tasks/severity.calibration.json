@@ -1,0 +1,33 @@
+{
+ "Qwen3-14B-Q4_K_M.gguf": {
+  "bias": {},
+  "choices": [
+   "ok",
+   "attention",
+   "problem"
+  ],
+  "method": "global-T",
+  "prompt_sha256": "5f6313a4c03887ea56b1f874142b03f6d8555a147fcd96c0eb35d01b8a98dae4",
+  "provenance": {
+   "cv_nll_cal": 0.2583,
+   "fit_n": 21,
+   "fit_split": "cal",
+   "fitted": "2026-09-25",
+   "prompt_variant": "default",
+   "test": {
+    "accuracy": 0.9583,
+    "brier": 0.0547,
+    "ece": 0.1108,
+    "n": 24,
+    "nll": 0.1296
+   },
+   "test_raw": {
+    "accuracy": 0.9583,
+    "brier": 0.022,
+    "ece": 0.0251,
+    "nll": 0.0336
+   }
+  },
+  "temperature": 5.053090316563868
+ }
+}

@@ -74,18 +74,29 @@ class Scorer:
         *,
         template=qwen3_prompt,
         end_of_turn: str | None = QWEN3_END_OF_TURN,
+        model: str | None = None,
     ):
         self.backend = backend
         self.template = template
         self.end_of_turn = end_of_turn
+        # Which weights these are (the GGUF file name): what a task's
+        # calibration is keyed by. None means unknown, so never calibrated.
+        self.model = model
 
-    def logprobs(self, prompt: str, choices: Sequence[str]) -> dict[str, float]:
+    def logprobs(
+        self, prompt: str, choices: Sequence[str], system: str | None = None
+    ) -> dict[str, float]:
         """Summed log-prob of each choice (plus end-of-turn) given ``prompt``."""
         if not choices:
             raise ValueError("need at least one choice")
         if len(set(choices)) != len(choices):
             raise ValueError("choices must be distinct")
-        prefix = self.backend.tokenize(self.template(prompt))
+        text = (
+            self.template(prompt)
+            if system is None
+            else self.template(prompt, system=system)
+        )
+        prefix = self.backend.tokenize(text)
         tail = self.backend.tokenize(self.end_of_turn) if self.end_of_turn else []
         out = {}
         for choice in choices:
@@ -94,6 +105,8 @@ class Scorer:
             out[choice] = sequence_logprob(rows, tokens)
         return out
 
-    def score(self, prompt: str, choices: Sequence[str]) -> dict[str, float]:
+    def score(
+        self, prompt: str, choices: Sequence[str], system: str | None = None
+    ) -> dict[str, float]:
         """Probability of each choice, normalised over ``choices``."""
-        return normalize(self.logprobs(prompt, choices))
+        return normalize(self.logprobs(prompt, choices, system))

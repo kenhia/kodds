@@ -1,0 +1,16 @@
+# Generic email triage. Prompt unchanged from 001's eval set.
+name = "triage"
+template = """You triage incoming email.
+{choice_list}
+
+Message: {message}
+
+Answer with legitimate, spam or phishing only."""
+
+[limits]
+message = 2000
+
+[choices]
+legitimate = "real mail the recipient expects or would want."
+spam = "unsolicited bulk advertising or junk, not trying to steal anything."
+phishing = "tries to steal credentials, money or secrets by impersonation."
