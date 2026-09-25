@@ -67,7 +67,7 @@ queue (`queued_ms`). Measured on the resident 14B:
 | severity, a kmon finding with a journal tail (~650 chars) | ~190 ms |
 | severity at its 2000-char input cap | ~430 ms |
 | route | ~1.45 s |
-| cold start, or a route call straight after severity | ~5–6 s |
+| cold start, or a route call straight after severity | ~5–9 s (the first route call after the 004 deploy took 8.7 s) |
 
 **Use a 10 s client timeout and fail soft.** kodds is advice. A consumer
 that cannot reach it records "no grade" and carries on exactly as it would
@@ -75,11 +75,14 @@ have without kodds. Nothing a consumer does may *depend* on a grade arriving.
 
 ### What unavailable looks like
 
-- **A connection error, or an HTTP 5xx from `tailscale serve`**: the
-  process is not answering. Every deploy restarts it (the model loads in
-  about 1–2 s once its file is in the page cache), and a refit stops it on
-  purpose for about 15 minutes (see `route-overlay.md`). kodds itself never
-  returns a 5xx for a well-formed request, so any 5xx comes from the proxy.
+- **A connection error, or an HTTP 502 from `tailscale serve`**: the
+  process is not answering. kodds itself never returns a 5xx for a
+  well-formed request, so any 5xx comes from the proxy. Every deploy
+  restarts the service. The model loads in about 1–2 s, but **a restart
+  under live tailnet traffic currently shows about 90 s of 502**: the old
+  process waits on the proxy's keep-alive connections until systemd kills
+  it (measured at the 004 deploy, kodds #3248). A refit stops the service
+  on purpose for about 15 minutes (see `route-overlay.md`).
 - **A timeout**: a long queue behind route calls, or a stuck process.
 - `404` means an unknown task. `422` means bad inputs or a bad `caller`.
   `400` means the body was not a JSON object. These are your bug, not

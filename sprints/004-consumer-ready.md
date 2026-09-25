@@ -99,3 +99,35 @@ deferred) instead of "tentative".
 - `recipes/kodds-service` in k-homelab asserts the overlay's mode, but not
   the calls dir's. Adding that would be new behaviour in another repo's
   recipe, so it is raised in the handoff, not landed here.
+
+## Deployed
+
+- **What:** `5162bf4` (squash of PR #4), by the `deploy-kodds` skill
+  (`just deploy`), on 2026-09-25 at 12:08 PDT, run from kubs0.
+  `current` → `releases/5162bf4…`, and `previous` → `2ff76d6`.
+- **healthz** (over the tailnet): the commit matches, `gpu_offload` is
+  true, and route, severity and triage are all `calibrated=True`.
+  `call_log` = `~/.local/share/kodds/calls/2026-09.jsonl`, writable.
+- **Triggered acceptance (passed).** Over the tailnet, from kubs0, one
+  classify per task over HTTP plus one MCP `classify`:
+  - All four returned a `request_id`, e.g. `01M3CZGC6CWR0R11M9XGM79PAY`
+    (severity → attention).
+  - Each id is in `calls/2026-09.jsonl`, with the caller as sent: body
+    field `deploy-kodds`, header `claude-kubs0`, MCP argument
+    `deploy-kodds-mcp`.
+  - Every line has all 12 fields. Modes are **700** (dir) and **600**
+    (file).
+  - MCP `tools/list` returns list_tasks, classify and score.
+- **Latency, first calls after the restart:** severity 571 ms, triage
+  150 ms, route **8.7 s** (above the doc's old 5–6 s cold figure, so the
+  doc was corrected).
+- **VRAM:** 13,404 MiB before, 13,402 MiB after. **TEI pids** were 875202
+  and 875203 before and after, untouched.
+- **Restart behaviour (the overseer's check 5).** `tailscale serve`
+  answers **502** while the backend is down, so the doc's "any 5xx" held.
+  But the stop took **91 s**: uvicorn waited on the proxy's keep-alive
+  connections (`Waiting for connections to close`) until systemd's 90 s
+  stop timeout SIGKILLed it. The 003 deploys stopped instantly, with no
+  tailnet traffic. The doc now says so. The one-line fix
+  (`timeout_graceful_shutdown`) is filed as kodds #3248, because it needs
+  a PR and redeploy beyond this ship's clearance.
