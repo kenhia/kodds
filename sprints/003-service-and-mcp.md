@@ -146,3 +146,10 @@ between makes route re-prefill its ~7k-token project list. Not fixed here,
 as the brief asked: whether it matters depends on a consumer's call mix,
 and none exists yet. It went onto the roadmap's Later/Ideas beside choice
 batching, with the fix named (a saved KV state per task).
+
+## Repaired in passing
+
+- CUDA build declared in `pyproject.toml` rather than only in the README
+  (#3207 asked for it). It surfaced a real gap: CMake finds no `nvcc` in a
+  non-interactive shell, so the justfile exports `/usr/local/cuda/bin` on
+  PATH. Gate: `just setup` asserts GPU offload, and so does `just deploy`.
